@@ -94,7 +94,7 @@ public class CouchService extends Service {
     public void onDestroy() {
     	try {
 			Runtime.getRuntime().exec("/system/bin/kill " + couch.pid);
-			Runtime.getRuntime().exec("/system/bin/killall beam"); //This is safe since couch can only kill couch.
+			Runtime.getRuntime().exec("/system/bin/killall -9 beam"); //This is safe since couch can only kill couch.
 		} catch (IOException e) {
 			//Failed to kill couch? 
 		}

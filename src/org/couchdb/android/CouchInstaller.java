@@ -96,6 +96,7 @@ public class CouchInstaller {
 
 		// TODO: Different CPU arch support.
 		packages.add("couch-erlang-dev"); // CouchDB, Erlang, CouchJS
+		packages.add("dns-fix"); //Add inet config to fallback on erlang resolver
 		if (android.os.Build.VERSION.SDK_INT == 7)
 			packages.add("couch-icu-driver-eclair");
 		else if (android.os.Build.VERSION.SDK_INT == 8)
@@ -109,8 +110,10 @@ public class CouchInstaller {
 	}
 
 	public static void doInstall(Handler handler) throws IOException {
-		for (String pkg : packageSet())
-			installPackage(pkg, handler);
+		for(String pkg : packageSet()) {
+			if(!(new File(dataPath + "/" + pkg + ".installedfiles")).exists())
+				installPackage(pkg, handler);
+		}
 
 		Message done = Message.obtain();
 		done.arg2 = 1;
