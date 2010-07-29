@@ -53,7 +53,7 @@ public class CouchInstaller {
 					Log.v(TAG,
 							"LINK: " + e.getName() + " -> " + e.getLinkName());
 					Runtime.getRuntime().exec(
-							new String[] { "/system/bin/ln", "-s", e.getName(),
+							new String[] { "ln", "-s", e.getName(),
 									e.getLinkName() });
 					installedfiles.add(e.getName());
 				} else {
@@ -63,7 +63,7 @@ public class CouchInstaller {
 					IOUtils.copy(tarstream, new FileOutputStream(target));
 					installedfiles.add(e.getName());
 				}
-				Runtime.getRuntime().exec("/system/bin/chmod 755 " + e.getName()); //TODO: Set to actual tar perms.
+				Runtime.getRuntime().exec("chmod 755 " + e.getName()); //TODO: Set to actual tar perms.
 				files++;
 				Message progress = new Message();
 				progress.arg1 = files++;
