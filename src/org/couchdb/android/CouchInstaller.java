@@ -77,6 +77,13 @@ public class CouchInstaller {
 			for (String file : installedfiles)
 				iLOWriter.write(file+"\n");
 			iLOWriter.close();
+			for (String file : installedfiles)
+			{
+				if(file.endsWith(".postinst.sh"))
+				{
+					Runtime.getRuntime().exec("sh " + file);
+				}
+			}
 		} else {
 			throw new IOException();
 		}
@@ -95,7 +102,9 @@ public class CouchInstaller {
 		ArrayList<String> packages = new ArrayList<String>();
 
 		// TODO: Different CPU arch support.
-		packages.add("couch-erlang-dev"); // CouchDB, Erlang, CouchJS
+		// TODO: Some kind of sane remote manifest for this (remote updater)
+		packages.add("couch-erl-1.0"); // CouchDB, Erlang, CouchJS
+		packages.add("fixup-1.0"); //Cleanup old mochi, retrigger DNS fix install.
 		packages.add("dns-fix"); //Add inet config to fallback on erlang resolver
 		if (android.os.Build.VERSION.SDK_INT == 7)
 			packages.add("couch-icu-driver-eclair");
