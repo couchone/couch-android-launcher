@@ -57,7 +57,7 @@ public class CouchDB extends Activity {
         startButton.setOnClickListener(new OnClickListener(){
 
 			public void onClick(View v) {
-				startService(new Intent(getApplicationContext(), CouchService.class));
+				startService(new Intent("org.couchdb.android.COUCHDB_SERVICE"));
 				startButton.setEnabled(false);
 				stopButton.setEnabled(true);
 			}
@@ -66,7 +66,7 @@ public class CouchDB extends Activity {
         
         stopButton.setOnClickListener(new OnClickListener(){
 			public void onClick(View v) {
-				stopService(new Intent(getApplicationContext(), CouchService.class));
+				stopService(new Intent("org.couchdb.android.COUCHDB_SERVICE"));
 				startButton.setEnabled(true);
 				stopButton.setEnabled(false);
 			}   	

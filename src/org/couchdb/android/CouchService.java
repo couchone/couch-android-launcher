@@ -21,6 +21,7 @@ import com.google.ase.Exec;
 
 public class CouchService extends Service {
 	final String TAG = "CouchDB";
+	final int NO_NOTIFY = 1;
 	private NotificationManager mNM;
 	CouchProcess couch;
 	
@@ -30,8 +31,11 @@ public class CouchService extends Service {
 		  FileDescriptor fd;
 		  PrintStream out;
 		  BufferedReader in;
-
-		  public void start(String binary, String arg1, String arg2) {
+		  boolean started = false;
+		  boolean notify;
+		  
+		  public void start(String binary, String arg1, String arg2, boolean donotify) {
+			notify = donotify;
 		    int[] pidbuffer = new int[1];
 		    fd = Exec.createSubprocess(binary, arg1, arg2, pidbuffer);
 		    pid = pidbuffer[0];
@@ -56,14 +60,18 @@ public class CouchService extends Service {
 		        		int icon = R.drawable.icon;
 		                CharSequence tickerText = "CouchDB Running";
 		                long when = System.currentTimeMillis();
-		                Notification notification = new Notification(icon, tickerText, when);
-		                notification.flags = Notification.FLAG_ONGOING_EVENT;
-		                Intent i = new Intent(Intent.ACTION_VIEW);
-		                i.setData(Uri.parse("http://127.0.0.1:5984/_utils"));
-		                notification.setLatestEventInfo(getApplicationContext(), "CouchDB Running", "Press to open Futon", PendingIntent.getActivity(getApplicationContext(), 0, i, PendingIntent.FLAG_CANCEL_CURRENT));
-		                mNM.cancel(1);
-		                mNM.notify(2, notification);
-		                startForeground(2, notification);
+		                if(notify)
+		                {
+		                	Notification notification = new Notification(icon, tickerText, when);
+		                	notification.flags = Notification.FLAG_ONGOING_EVENT;
+		                	Intent i = new Intent(Intent.ACTION_VIEW);
+		                	i.setData(Uri.parse("http://127.0.0.1:5984/_utils"));
+		                	notification.setLatestEventInfo(getApplicationContext(), "CouchDB Running", "Press to open Futon", PendingIntent.getActivity(getApplicationContext(), 0, i, PendingIntent.FLAG_CANCEL_CURRENT));
+		                	mNM.cancel(1);
+		                	mNM.notify(2, notification);
+		                	startForeground(2, notification);
+		                }
+		                started = true;
 		        	}
 		        }
 		      }
@@ -75,17 +83,21 @@ public class CouchService extends Service {
 	
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+    	if(couch != null) return 0;
+    	boolean donotify = (flags != 1);
     	mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
         couch = new CouchProcess();
         int icon = R.drawable.icon;
         CharSequence tickerText = "CouchDB Starting";
         long when = System.currentTimeMillis();
-        Notification notification = new Notification(icon, tickerText, when);
-        Intent notificationIntent = new Intent(this, CouchDB.class);
-        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
-        notification.setLatestEventInfo(getApplicationContext(), "CouchDB Starting", "Please Wait...", contentIntent);
-        mNM.notify(1, notification);
-        couch.start("/system/bin/sh", "/sdcard/couch/bin/couchdb", "");
+        if(donotify) {
+        	Notification notification = new Notification(icon, tickerText, when);
+        	Intent notificationIntent = new Intent(this, CouchDB.class);
+        	PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+        	notification.setLatestEventInfo(getApplicationContext(), "CouchDB Starting", "Please Wait...", contentIntent);
+        	mNM.notify(1, notification);
+        }
+        couch.start("/system/bin/sh", "/sdcard/couch/bin/couchdb", "", donotify);
         return START_STICKY;
     }
     
@@ -93,8 +105,9 @@ public class CouchService extends Service {
     @Override
     public void onDestroy() {
     	try {
-			Runtime.getRuntime().exec("/system/bin/kill " + couch.pid);
-			Runtime.getRuntime().exec("/system/bin/killall -9 beam"); //This is safe since couch can only kill couch.
+    		couch.out.close();
+			android.os.Process.killProcess(couch.pid);
+			couch.in.close();
 		} catch (IOException e) {
 			//Failed to kill couch? 
 		}
@@ -103,8 +116,17 @@ public class CouchService extends Service {
 	
 	@Override
 	public IBinder onBind(Intent intent) {
-		// TODO Auto-generated method stub
-		return null;
+		this.onStartCommand(null, NO_NOTIFY, 0);
+		return mBinder;
 	}
+
+	private final ICouchService.Stub mBinder = new ICouchService.Stub() 
+	{
+		public int getPort()
+		{
+			while(couch == null || !couch.started) Thread.yield(); //Horrible blocking whee!
+			return 5984;
+		}
+	};
 
 }
