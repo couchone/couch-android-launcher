@@ -1,6 +1,6 @@
 /*
  * This file is auto-generated.  DO NOT MODIFY.
- * Original file: /Users/apage43/Documents/workspace/CouchDB/src/org/couchdb/android/ICouchService.aidl
+ * Original file: /Users/daleharvey/lib/couch-android-launcher/src/org/couchdb/android/ICouchService.aidl
  */
 package org.couchdb.android;
 public interface ICouchService extends android.os.IInterface

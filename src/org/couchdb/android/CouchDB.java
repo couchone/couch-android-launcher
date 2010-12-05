@@ -8,6 +8,9 @@ import android.app.ActivityManager.RunningServiceInfo;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -42,6 +45,25 @@ public class CouchDB extends Activity {
 		}
 		startButton.setEnabled(true);
 		stopButton.setEnabled(false);
+	}
+	
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+	    MenuInflater inflater = getMenuInflater();
+	    inflater.inflate(R.menu.main_menu, menu);
+	    return true;
+	}
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+	    switch (item.getItemId()) {
+	    case R.id.stop:
+	    	stopService(new Intent("org.couchdb.android.COUCHDB_SERVICE"));
+	    	finish();
+	        return true;
+	    default:
+	        return super.onOptionsItemSelected(item);
+	    }
 	}
 	
 	/** Called when the activity is first created. */

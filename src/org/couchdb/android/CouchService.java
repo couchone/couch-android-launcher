@@ -101,7 +101,6 @@ public class CouchService extends Service {
         return START_STICKY;
     }
     
-    
     @Override
     public void onDestroy() {
     	try {
