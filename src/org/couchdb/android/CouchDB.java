@@ -5,7 +5,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -16,7 +15,9 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.webkit.WebChromeClient;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
 public class CouchDB extends Activity {
 	
@@ -31,19 +32,14 @@ public class CouchDB extends Activity {
             switch (msg.what) {
                 case CouchService.MSG_COUCH_STARTED:
                 	Log.v(TAG, "Received COUCH_STARTED Message");
-                	// TODO: WebView screws up layout, launching browser
-                	// makes Resume etc annoying
-                	WebView webview = new WebView(CouchDB.this);
-                	setContentView(webview);
-                	webview.loadUrl(FUTON);
-                	//launchFuton();
+                	setFutonView();
                     break;
                 default:
                     super.handleMessage(msg);
             }
         }
     }
-
+    
     final Messenger mMessenger = new Messenger(new IncomingHandler());
 
     private ServiceConnection mConnection = new ServiceConnection() {
@@ -65,16 +61,14 @@ public class CouchDB extends Activity {
         }
     };
 
-    private void launchFuton() { 
-    	Uri uri = Uri.parse(FUTON);
-    	Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-    	startActivity(intent);    
-    }
-    
-    @Override
-    public void onResume() {
-    	super.onResume();
-    	//launchFuton();
+    private void setFutonView() { 
+    	WebView webView = new WebView(CouchDB.this);
+    	webView.setWebChromeClient(new WebChromeClient());
+    	webView.setWebViewClient(new WebViewClient());
+    	webView.getSettings().setJavaScriptEnabled(true); 
+    	webView.getSettings().setBuiltInZoomControls(true);
+    	setContentView(webView);
+    	webView.loadUrl(FUTON);
     }
     
 	@Override

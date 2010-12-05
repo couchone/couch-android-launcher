@@ -14,7 +14,6 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -106,9 +105,10 @@ public class CouchService extends Service {
 		                {
 		                	Notification notification = new Notification(icon, tickerText, when);
 		                	notification.flags = Notification.FLAG_ONGOING_EVENT;
-		                	Intent i = new Intent(Intent.ACTION_VIEW);
-		                	i.setData(Uri.parse("http://127.0.0.1:5984/_utils"));
-		                	notification.setLatestEventInfo(getApplicationContext(), "CouchDB Running", "Press to open Futon", PendingIntent.getActivity(getApplicationContext(), 0, i, PendingIntent.FLAG_CANCEL_CURRENT));
+		                	Intent i = new Intent(CouchService.this, CouchDB.class);
+		                	//i.setData(Uri.parse("http://127.0.0.1:5984/_utils"));
+		                	notification.setLatestEventInfo(getApplicationContext(), "CouchDB Running", "Press to open Futon", 
+		                			PendingIntent.getActivity(CouchService.this, 0, i, 0));
 		                	mNM.cancel(1);
 		                	mNM.notify(2, notification);
 		                	startForeground(2, notification);
