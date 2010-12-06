@@ -1,6 +1,9 @@
 package org.couchdb.android;
 
+import org.couchdb.android.ICouchClient;
+
 interface ICouchService
 {
-	int getPort();
+    void startCouchDB(ICouchClient callback);
+    void quitCouchDB(ICouchClient callback);
 }

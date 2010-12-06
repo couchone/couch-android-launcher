@@ -9,7 +9,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
 import android.view.Menu;
@@ -24,39 +23,17 @@ public class CouchDB extends Activity {
 	public final static String TAG = "CouchDB";
 	public final static String FUTON = "http://127.0.0.1:5984/_utils/";
     
-    Messenger mService = null;
+    ICouchService mService = null;
     
-    class IncomingHandler extends Handler {
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case CouchService.MSG_COUCH_STARTED:
-                	Log.v(TAG, "Received COUCH_STARTED Message");
-                	setFutonView();
-                    break;
-                default:
-                    super.handleMessage(msg);
-            }
-        }
-    }
-    
-    final Messenger mMessenger = new Messenger(new IncomingHandler());
-
     private ServiceConnection mConnection = new ServiceConnection() {
-        public void onServiceConnected(ComponentName className, IBinder service) {
-        	mService = new Messenger(service);
-            // We want to monitor the service for as long as we are
-            // connected to it.
+        public void onServiceConnected(ComponentName className, IBinder service) {        	
+        	mService = ICouchService.Stub.asInterface(service);
             try {
-                Message msg = Message.obtain(null, CouchService.MSG_REGISTER_CLIENT);
-                msg.replyTo = mMessenger;
-                mService.send(msg);
+            	mService.startCouchDB(mCallback);
             } catch (RemoteException e) { }
         }
 
         public void onServiceDisconnected(ComponentName className) {
-            // This is called when the connection with the service has been
-            // unexpectedly disconnected -- that is, its process crashed.
             mService = null;
         }
     };
@@ -82,7 +59,7 @@ public class CouchDB extends Activity {
 	public boolean onOptionsItemSelected(MenuItem item) {
 	    switch (item.getItemId()) {
 	    case R.id.stop:
-	    	stopService(new Intent("org.couchdb.android.COUCHDB_SERVICE"));
+	    	unbindService(mConnection);
 	    	finish();
 	        return true;
 	    default:
@@ -99,7 +76,30 @@ public class CouchDB extends Activity {
         if (!installed) { 
         	startActivity(new Intent(this, CouchInstallActivity.class));
         } else { 
-        	bindService(new Intent("org.couchdb.android.COUCHDB_SERVICE"), mConnection, Context.BIND_AUTO_CREATE);
+        	bindService(new Intent(ICouchService.class.getName()), mConnection, Context.BIND_AUTO_CREATE);
         }
 	}
+	
+    private ICouchClient mCallback = new ICouchClient.Stub() {
+    	@Override
+        public void couchStarted() {
+            mHandler.sendMessage(mHandler.obtainMessage(COUCH_STARTED));
+        }
+    };
+
+    private static final int COUCH_STARTED = 1;
+
+    private Handler mHandler = new Handler() {
+        @Override 
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case COUCH_STARTED:
+                	setFutonView();
+                    break;
+                default:
+                    super.handleMessage(msg);
+            }
+        }
+    };
+	
 }

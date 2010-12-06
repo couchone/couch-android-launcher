@@ -14,10 +14,9 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Message;
 import android.os.Messenger;
+import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.util.Log;
 
@@ -31,29 +30,25 @@ public class CouchService extends Service {
 	
 	ArrayList<Messenger> mClients = new ArrayList<Messenger>();
 	
+	final RemoteCallbackList<ICouchClient> mCallbacks = new RemoteCallbackList<ICouchClient>();
+	
 	static final int MSG_REGISTER_CLIENT = 1;
 	static final int MSG_COUCH_STARTED = 2;
 
 	CouchProcess couch;
 
-    class IncomingHandler extends Handler {
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case MSG_REGISTER_CLIENT:
-                    mClients.add(msg.replyTo);
-                    break;
-                default:
-                    super.handleMessage(msg);
-            }
+    public class CouchServiceImpl extends ICouchService.Stub {
+
+    	@Override 
+        public void startCouchDB(ICouchClient cb) {
+            if (cb != null) mCallbacks.register(cb);
         }
+    	@Override 
+        public void quitCouchDB(ICouchClient cb) {
+            if (cb != null) mCallbacks.unregister(cb);
+        }    	
     }
     
-    /**
-     * Target we publish for clients to send messages to IncomingHandler.
-     */
-    final Messenger mMessenger = new Messenger(new IncomingHandler());
-	
 	public class CouchProcess {
 
 		  public Integer pid;
@@ -71,6 +66,7 @@ public class CouchService extends Service {
 		    out = new PrintStream(new FileOutputStream(fd), true);
 		    in = new BufferedReader(new InputStreamReader(new FileInputStream(fd)));
 
+		    
 		    new Thread(new Runnable() {
 		      public void run() {
 		        Log.v(TAG, "PID: " + pid);
@@ -85,17 +81,14 @@ public class CouchService extends Service {
 		        	Log.v(TAG, line);
 		        	if(line.contains("has started on"))
 		        	{
-		        		for (int i=mClients.size()-1; i>=0; i--) {
+
+		        		final int N = mCallbacks.beginBroadcast();
+	                    for (int i=0; i<N; i++) {
 	                        try {
-	        		        	Log.v(TAG, "Sending Started Message");
-	                            mClients.get(i).send(Message.obtain(null, MSG_COUCH_STARTED, 0, 0));
-	                        } catch (RemoteException e) {
-	                            // The client is dead.  Remove it from the list;
-	                            // we are going through the list from back to front
-	                            // so this is safe to do inside the loop.
-	                            mClients.remove(i);
-	                        }
+	                            mCallbacks.getBroadcastItem(i).couchStarted();
+	                        } catch (RemoteException e) { }
 	                    }
+	                    mCallbacks.finishBroadcast();
 
 		        		Log.v(TAG, "Couch has started.");
 		        		int icon = R.drawable.icon;
@@ -106,7 +99,6 @@ public class CouchService extends Service {
 		                	Notification notification = new Notification(icon, tickerText, when);
 		                	notification.flags = Notification.FLAG_ONGOING_EVENT;
 		                	Intent i = new Intent(CouchService.this, CouchDB.class);
-		                	//i.setData(Uri.parse("http://127.0.0.1:5984/_utils"));
 		                	notification.setLatestEventInfo(getApplicationContext(), "CouchDB Running", "Press to open Futon", 
 		                			PendingIntent.getActivity(CouchService.this, 0, i, 0));
 		                	mNM.cancel(1);
@@ -138,26 +130,6 @@ public class CouchService extends Service {
         }
         couch.start("/system/bin/sh", "/sdcard/couch/bin/couchdb", "", true);
     }
-
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-    	if(couch != null) return 0;
-    	boolean donotify = (flags != 1);
-    	mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-        couch = new CouchProcess();
-        int icon = R.drawable.icon;
-        CharSequence tickerText = "CouchDB Starting";
-        long when = System.currentTimeMillis();
-        if(donotify) {
-        	Notification notification = new Notification(icon, tickerText, when);
-        	Intent notificationIntent = new Intent(this, CouchDB.class);
-        	PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
-        	notification.setLatestEventInfo(getApplicationContext(), "CouchDB Starting", "Please Wait...", contentIntent);
-        	mNM.notify(1, notification);
-        }
-        couch.start("/system/bin/sh", "/sdcard/couch/bin/couchdb", "", donotify);
-        return START_STICKY;
-    }
     
     @Override
     public void onDestroy() {
@@ -173,22 +145,6 @@ public class CouchService extends Service {
 	
     @Override
     public IBinder onBind(Intent intent) {
-        return mMessenger.getBinder();
+    	return new CouchServiceImpl();
     }
-
-	//@Override
-	//public IBinder onBind(Intent intent) {
-	//	this.onStartCommand(null, NO_NOTIFY, 0);
-	//	return mBinder;
-	//}
-
-	private final ICouchService.Stub mBinder = new ICouchService.Stub() 
-	{
-		public int getPort()
-		{
-			while(couch == null || !couch.started) Thread.yield(); //Horrible blocking whee!
-			return 5984;
-		}
-	};
-
 }
