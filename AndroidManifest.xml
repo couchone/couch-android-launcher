@@ -4,8 +4,12 @@
       android:installLocation="preferExternal"
       android:versionName="1.0-android-0.5" android:versionCode="6">
 
-    <application android:icon="@drawable/icon" android:label="@string/app_name">
+    <application
+	    android:debuggable="true" 
+    	android:icon="@drawable/icon" 
+    	android:label="@string/app_name">
         <activity android:name=".CouchDB"
+                  android:configChanges="keyboardHidden|orientation"
                   android:label="@string/app_name"
                   android:launchMode="singleTask">
             <intent-filter>
@@ -14,7 +18,8 @@
             </intent-filter>
         </activity>
 
-	    <activity android:name="CouchInstallActivity"></activity>
+	    <activity android:name="CouchInstallActivity"
+                  android:configChanges="keyboardHidden|orientation"></activity>
 	
 		<service android:name="CouchService" android:exported="true" android:enabled="true" android:process=":remote">
 			<intent-filter>
@@ -28,5 +33,9 @@
 	<uses-permission android:name="android.permission.INTERNET"></uses-permission>
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"></uses-permission>
 	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"></uses-permission>
+	
+	<permission-tree android:icon="@drawable/icon" 
+					 android:label="Grant access to applications" 
+                     android:name="org.couchdb.db" />
 	
 </manifest> 

@@ -19,18 +19,23 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
 public class CouchInstaller {
+	
 	final static String baseUrl = "http://couchdb-android.s3.amazonaws.com/";
 	final static String dataPath = "/data/data/org.couchdb.android";
-	// SD card isn't -ideal-, but right now we are really hefty.
+
 	final static String TAG = "CouchDB";
 
 	private static void installPackage(String pkg, Handler handler)
 			throws IOException {
+		
+		Log.v(TAG, "Installing " + pkg);
+		
 		HttpClient pkgHttpClient = new DefaultHttpClient();
 		HttpGet tgzrequest = new HttpGet(baseUrl + pkg + ".tgz");
 		HttpResponse response = pkgHttpClient.execute(tgzrequest);
@@ -40,7 +45,6 @@ public class CouchInstaller {
 		if (status.getStatusCode() == 200) {
 			HttpEntity entity = response.getEntity();
 			InputStream instream = entity.getContent();
-			// int fileSize = (int) entity.getContentLength();
 			TarArchiveInputStream tarstream = new TarArchiveInputStream(
 					new GZIPInputStream(instream));
 			TarArchiveEntry e = null;
@@ -50,15 +54,14 @@ public class CouchInstaller {
 					new File(e.getName()).mkdir();
 					Log.v(TAG, "MKDIR: " + e.getName());
 				} else if (!"".equals(e.getLinkName())) {
-					Log.v(TAG,
-							"LINK: " + e.getName() + " -> " + e.getLinkName());
-					Runtime.getRuntime().exec(
-							new String[] { "ln", "-s", e.getName(),
-									e.getLinkName() });
+					Log.v(TAG, "LINK: " + e.getName() + " -> " + e.getLinkName());
+					Runtime.getRuntime().exec(new String[] { "ln", "-s", e.getName(), e.getLinkName() });
 					installedfiles.add(e.getName());
 				} else {
 					File target = new File(e.getName());
-					if(target.getParent() != null) new File(target.getParent()).mkdirs();
+					if(target.getParent() != null) {
+						new File(target.getParent()).mkdirs();
+					}
 					Log.v(TAG, "Extracting " + e.getName());
 					IOUtils.copy(tarstream, new FileOutputStream(target));
 					installedfiles.add(e.getName());
@@ -68,19 +71,22 @@ public class CouchInstaller {
 				Message progress = new Message();
 				progress.arg1 = files++;
 				progress.arg2 = 0;
+				progress.what = CouchInstallActivity.PROGRESS;
 				handler.sendMessage(progress);
 			}
 
 			tarstream.close();
 			instream.close();
-			FileWriter iLOWriter = new FileWriter(dataPath + "/" + pkg + ".installedfiles");
-			for (String file : installedfiles)
+			
+			File couchSDCard = Environment.getExternalStorageDirectory();
+			File tmp = new File(couchSDCard, "couch/" + pkg + ".installedfiles");
+			FileWriter iLOWriter = new FileWriter(tmp);
+			for (String file : installedfiles) {
 				iLOWriter.write(file+"\n");
+			}
 			iLOWriter.close();
-			for (String file : installedfiles)
-			{
-				if(file.endsWith(".postinst.sh"))
-				{
+			for (String file : installedfiles) {
+				if(file.endsWith(".postinst.sh")) {
 					Runtime.getRuntime().exec("sh " + file);
 				}
 			}
@@ -90,17 +96,25 @@ public class CouchInstaller {
 	}
 
 	public static boolean checkInstalled() {
+		
+		File couchSDCard = Environment.getExternalStorageDirectory();
+		
 		for (String pkg : packageSet()) {
-			File f = new File(dataPath + "/" + pkg + ".installedfiles");
-			if (!f.exists())
+			String filePath = "couch/" + pkg + ".installedfiles";
+			File file = new File(couchSDCard, filePath);
+			if (!file.exists()) {
 				return false;
+			}
 		}
-		return true;
+		
+		File f = new File(couchSDCard , "couch");
+		return f.exists();
 	}
 
 	public static List<String> packageSet() {
 		ArrayList<String> packages = new ArrayList<String>();
 
+		
 		// TODO: Different CPU arch support.
 		// TODO: Some kind of sane remote manifest for this (remote updater)
 		packages.add("couch-erl-1.0"); // CouchDB, Erlang, CouchJS
@@ -120,12 +134,15 @@ public class CouchInstaller {
 
 	public static void doInstall(Handler handler) throws IOException {
 		for(String pkg : packageSet()) {
-			if(!(new File(dataPath + "/" + pkg + ".installedfiles")).exists())
+			String filePath = "couch/" + pkg + ".installedfiles";
+			File file = new File(Environment.getExternalStorageDirectory(), filePath);
+			if(!file.exists()) {
 				installPackage(pkg, handler);
+			}
 		}
 
 		Message done = Message.obtain();
-		done.arg2 = 1;
+		done.what = CouchInstallActivity.COMPLETE;
 		handler.sendMessage(done);
 	}
 
