@@ -45,8 +45,8 @@ public class CouchCtrlListener {
 	}
 
 	private void doReplication(JSONObject json) throws JSONException {
-		HTTPRequest req = HTTPRequest.httpRequest("POST", couchUrl
-				+ "_replicate", json.toString(), headers());
+		
+		HTTPRequest req = HTTPRequest.post(couchUrl + "_replicate", json.toString(), headers());
 
 		// Java will just close the connection when it gets a 404
 		// without reading the result
@@ -61,8 +61,7 @@ public class CouchCtrlListener {
 		json.put("result", result);
 		json.put("status", "complete");
 		String id = json.getString("_id");
-		HTTPRequest.httpRequest("PUT", couchUrl + ctrl + "/" + id,
-				json.toString(), headers());
+		HTTPRequest.put(couchUrl + ctrl + "/" + id, json.toString(), headers());
 	}
 
 	private void handleChange(JSONObject doc) throws JSONException {
@@ -103,7 +102,7 @@ public class CouchCtrlListener {
 
 	private String[][] headers() {
 		String auth = Base64Coder.encodeString(adminUser + ":" + adminPass);
-		String[][] headers = { { "Authorization", "Basic " + auth } };
+		String[][] headers = {{"Authorization", "Basic " + auth}};
 		return headers;
 	}
 }

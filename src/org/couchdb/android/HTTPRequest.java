@@ -25,8 +25,17 @@ public class HTTPRequest {
 		this.status = status;
 	}
 
+	public static HTTPRequest post(String url, String data) throws JSONException { 
+		return post(url, data, new String[][]{});
+	}
+	
+	public static HTTPRequest post(String url, String data, String[][] headers)
+			throws JSONException {
+		return HTTPRequest.httpRequest("POST", url, data, headers);
+	}
+	
 	public static HTTPRequest put(String url, String data) throws JSONException {
-		return put(url, data, new String[][] {});
+		return put(url, data, new String[][]{});
 	}
 
 	public static HTTPRequest put(String url, String data, String[][] headers)
