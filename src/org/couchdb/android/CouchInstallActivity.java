@@ -53,8 +53,8 @@ public class CouchInstallActivity extends Activity {
 
 			case CouchInstallActivity.COMPLETE:
 				installProgress.dismiss();
-				Log.v(CouchDB.TAG, "Launching Couchdb activity");
-				startActivity(new Intent(getApplicationContext(), CouchDB.class));
+				Log.v(CouchFutonActivity.TAG, "Launching Couchdb activity");
+				startActivity(new Intent(getApplicationContext(), CouchFutonActivity.class));
 				break;
 			}
 		}

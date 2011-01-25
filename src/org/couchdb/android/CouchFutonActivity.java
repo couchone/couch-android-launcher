@@ -26,7 +26,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-public class CouchDB extends Activity {
+public class CouchFutonActivity extends Activity {
 
 	public final static String TAG = "CouchDB";
 	public final static String FUTON = "http://127.0.0.1:5984/_utils/";
@@ -58,7 +58,7 @@ public class CouchDB extends Activity {
 	};
 
 	private void setFutonView() {
-		WebView webView = new WebView(CouchDB.this);
+		WebView webView = new WebView(CouchFutonActivity.this);
 		webView.setWebChromeClient(new WebChromeClient());
 		webView.setWebViewClient(new CustomWebViewClient());
 		webView.setHttpAuthUsernamePassword("127.0.0.1", "administrator",
@@ -104,7 +104,7 @@ public class CouchDB extends Activity {
 
 	private void deleteDatabases() {
 		unbindService(mConnection);
-		CouchService.stopCouchDB();
+		CouchProcess.getInstance().stopCouchDB();
 		Log.v(TAG, "DELETING EVERYTHING");
 		File couchDir = new File(Environment.getExternalStorageDirectory(),
 				"couch");
@@ -121,7 +121,7 @@ public class CouchDB extends Activity {
 				.setPositiveButton("Yes",
 						new DialogInterface.OnClickListener() {
 							public void onClick(DialogInterface dialog, int id) {
-								CouchDB.this.deleteDatabases();
+								CouchFutonActivity.this.deleteDatabases();
 							}
 						})
 				.setNegativeButton("No", new DialogInterface.OnClickListener() {
