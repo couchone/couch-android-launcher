@@ -15,9 +15,6 @@ import java.util.Random;
 
 import org.json.JSONException;
 
-import android.app.Notification;
-import android.app.PendingIntent;
-import android.content.Intent;
 import android.os.Environment;
 import android.os.RemoteException;
 import android.util.Log;
@@ -86,31 +83,16 @@ public class CouchProcess {
 					if (line.contains("has started on")) {
 						couchStarted = true;
 						try {
+							ensureAdmin();
+						} catch (JSONException e1) {
+							e1.printStackTrace();
+						}
+						try {
 							service.couchStarted();
 						} catch (RemoteException e) {
-							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
 						Log.v(CouchFutonActivity.TAG, "Couch has started.");
-						int icon = R.drawable.icon;
-						CharSequence tickerText = "CouchDB Running";
-						long when = System.currentTimeMillis();
-						if (notify) {
-							Notification notification = new Notification(
-									icon, tickerText, when);
-							notification.flags = Notification.FLAG_ONGOING_EVENT;
-							//Intent i = new Intent(CouchService.this,
-							//		CouchFutonActivity.class);
-							//notification.setLatestEventInfo(
-							//		getApplicationContext(),
-							//		"CouchDB Running",
-							//		"Press to open Futon", PendingIntent
-							//				.getActivity(CouchService.this,
-							///						0, i, 0));
-							//mNM.cancel(1);
-							//mNM.notify(2, notification);
-							//startForeground(2, notification);
-						}
 					}
 				}
 			}

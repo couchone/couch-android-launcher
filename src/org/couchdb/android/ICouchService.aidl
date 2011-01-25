@@ -14,11 +14,6 @@ interface ICouchService
      */
     void initDatabase(ICouchClient callback, String name, boolean cmdDb);
 
-    /* This returns the admin credentials of CouchDB, you should
-     * really avoid ever using this 
-     */
-    void adminCredentials(ICouchClient callback);
-    
     /*
      * 
      */

@@ -78,9 +78,7 @@ public class CouchInstaller {
 			tarstream.close();
 			instream.close();
 			
-			File couchSDCard = Environment.getExternalStorageDirectory();
-			File tmp = new File(couchSDCard, "couch/" + pkg + ".installedfiles");
-			FileWriter iLOWriter = new FileWriter(tmp);
+			FileWriter iLOWriter = new FileWriter(dataPath + "/" + pkg + ".installedfiles");
 			for (String file : installedfiles) {
 				iLOWriter.write(file+"\n");
 			}
@@ -96,19 +94,15 @@ public class CouchInstaller {
 	}
 
 	public static boolean checkInstalled() {
-		
-		File couchSDCard = Environment.getExternalStorageDirectory();
-		
+				
 		for (String pkg : packageSet()) {
-			String filePath = "couch/" + pkg + ".installedfiles";
-			File file = new File(couchSDCard, filePath);
+			File file = new File(dataPath + "/" + pkg + ".installedfiles");
 			if (!file.exists()) {
 				return false;
 			}
 		}
 		
-		File f = new File(couchSDCard , "couch");
-		return f.exists();
+		return new File(Environment.getExternalStorageDirectory(), "couch").exists();
 	}
 
 	public static List<String> packageSet() {
@@ -133,12 +127,11 @@ public class CouchInstaller {
 	}
 
 	public static void doInstall(Handler handler) throws IOException {
+		
 		for(String pkg : packageSet()) {
-			String filePath = "couch/" + pkg + ".installedfiles";
-			File file = new File(Environment.getExternalStorageDirectory(), filePath);
-			if(!file.exists()) {
+			if(!(new File(dataPath + "/" + pkg + ".installedfiles")).exists()) {
 				installPackage(pkg, handler);
-			}
+			}	
 		}
 
 		Message done = Message.obtain();

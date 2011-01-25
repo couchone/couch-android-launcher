@@ -1,22 +1,10 @@
 package org.couchdb.android;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileDescriptor;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Random;
 
 import org.json.JSONException;
 
@@ -27,12 +15,8 @@ import android.app.Service;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Binder;
-import android.os.Environment;
 import android.os.IBinder;
 import android.os.RemoteException;
-import android.util.Log;
-
-import com.google.ase.Exec;
 
 public class CouchService extends Service {
 
@@ -94,12 +78,6 @@ public class CouchService extends Service {
 			}
 
 			callback.databaseCreated(dbName, userName, pass, tag);
-		}
-
-		@Override
-		public void adminCredentials(ICouchClient callback)
-				throws RemoteException {
-			callback.adminCredentials(couchProcess.adminUser, couchProcess.adminPass);
 		}
 
 		@Override
@@ -172,6 +150,26 @@ public class CouchService extends Service {
 	};
 
 	void couchStarted() throws RemoteException {
+		
+		int icon = R.drawable.icon;
+		CharSequence tickerText = "CouchDB Running";
+		long when = System.currentTimeMillis();
+		if (true) { //(notify) {
+			Notification notification = new Notification(icon, tickerText, when);
+			notification.flags = Notification.FLAG_ONGOING_EVENT;
+			Intent i = new Intent(CouchService.this,
+					CouchFutonActivity.class);
+			notification.setLatestEventInfo(
+					getApplicationContext(),
+					"CouchDB Running",
+					"Press to open Futon", PendingIntent
+							.getActivity(CouchService.this,
+									0, i, 0));
+			mNM.cancel(1);
+			mNM.notify(2, notification);
+			startForeground(2, notification);
+		}
+		
 		for (Entry<String, ICouchClient> entry : couchClients.entrySet()) {
 			ICouchClient client = entry.getValue();
 			client.couchStarted(couchProcess.couchHost, couchProcess.couchPort);
@@ -188,8 +186,6 @@ public class CouchService extends Service {
 	@Override
 	public void onCreate() {
 		mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-		//couchProcess.start(binary, arg1, arg2, donotify);
-		//couch = new CouchProcess();
 		int icon = R.drawable.icon;
 		CharSequence tickerText = "CouchDB Starting";
 		long when = System.currentTimeMillis();

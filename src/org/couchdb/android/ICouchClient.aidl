@@ -11,6 +11,4 @@ interface ICouchClient
 	 * and sharing etc, both use the same credentials
 	 */
 	void databaseCreated(String dbName, String user, String pass, String tag);
-	
-	void adminCredentials(String user, String pass);
 }

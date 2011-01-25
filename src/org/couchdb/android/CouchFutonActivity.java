@@ -33,9 +33,6 @@ public class CouchFutonActivity extends Activity {
 
 	private ProgressDialog loading;
 
-	private String adminUser;
-	private String adminPass;
-
 	private ICouchService couchService;
 	public Boolean serviceStarted = false;
 
@@ -58,11 +55,14 @@ public class CouchFutonActivity extends Activity {
 	};
 
 	private void setFutonView() {
+		
+		String user = CouchProcess.getInstance().adminUser;
+		String pass = CouchProcess.getInstance().adminPass;
+
 		WebView webView = new WebView(CouchFutonActivity.this);
 		webView.setWebChromeClient(new WebChromeClient());
 		webView.setWebViewClient(new CustomWebViewClient());
-		webView.setHttpAuthUsernamePassword("127.0.0.1", "administrator",
-				adminUser, adminPass);
+		webView.setHttpAuthUsernamePassword("127.0.0.1", "administrator", user, pass);
 		webView.getSettings().setJavaScriptEnabled(true);
 		webView.getSettings().setBuiltInZoomControls(true);
 		webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
@@ -188,20 +188,12 @@ public class CouchFutonActivity extends Activity {
 	private ICouchClient mCallback = new ICouchClient.Stub() {
 		@Override
 		public void couchStarted(String host, int port) throws RemoteException {
-			couchService.adminCredentials(mCallback);
+			mHandler.sendMessage(mHandler.obtainMessage(COUCH_STARTED));
 		}
 
 		@Override
 		public void databaseCreated(String name, String user, String pass,
 				String tag) throws RemoteException {
-		}
-
-		@Override
-		public void adminCredentials(String user, String pass)
-				throws RemoteException {
-			adminUser = user;
-			adminPass = pass;
-			mHandler.sendMessage(mHandler.obtainMessage(COUCH_STARTED));
 		}
 	};
 
