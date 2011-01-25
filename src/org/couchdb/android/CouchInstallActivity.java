@@ -1,8 +1,5 @@
 package org.couchdb.android;
 
-import java.io.IOException;
-import java.net.UnknownHostException;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
@@ -24,22 +21,22 @@ public class CouchInstallActivity extends Activity {
 	public final static int COMPLETE = 2;
 
 	private ProgressDialog installProgress;
+	
+	private CouchInstallActivity self = this;
 
 	private Handler pHandler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
+			
 			case CouchInstallActivity.ERROR:
 				final Button installButton = (Button) findViewById(R.id.InstallButton);
-				InstallError err = (InstallError) msg.obj;
-				AlertDialog.Builder builder = new AlertDialog.Builder(
-						CouchInstallActivity.this);
-				builder.setMessage(err.description)
+				AlertDialog.Builder builder = new AlertDialog.Builder(self);
+				builder.setMessage(self.getString(R.string.install_error))
 						.setCancelable(false)
 						.setPositiveButton("Ok",
 								new DialogInterface.OnClickListener() {
-									public void onClick(DialogInterface dialog,
-											int id) {
+									public void onClick(DialogInterface dialog, int id) {
 										installButton.setEnabled(true);
 									}
 								});
@@ -73,25 +70,7 @@ public class CouchInstallActivity extends Activity {
 								"Unpacking files...", true, false);
 				new Thread() {
 					public void run() {
-						try {
-							CouchInstaller.doInstall(pHandler);
-						} catch (UnknownHostException e) {
-							e.printStackTrace();
-							installProgress.dismiss();
-							Message progress = new Message();
-							progress.what = CouchInstallActivity.ERROR;
-							progress.obj = new InstallError(
-									"There was an error fetching the binaries, are you online? Please try again.");
-							pHandler.sendMessage(progress);
-						} catch (IOException e) {
-							e.printStackTrace();
-							installProgress.dismiss();
-							Message progress = new Message();
-							progress.what = CouchInstallActivity.ERROR;
-							progress.obj = new InstallError(
-									"There was an error fetching the binaries. Please try again.");
-							pHandler.sendMessage(progress);
-						}
+						startInstall();
 					}
 				}.start();
 
@@ -99,10 +78,13 @@ public class CouchInstallActivity extends Activity {
 		});
 	}
 
-	class InstallError {
-		public String description;
-		public InstallError(String description) {
-			this.description = description;
-		}
-	}
+	public void startInstall() { 
+		try {
+			CouchInstaller.doInstall(pHandler);
+		} catch (Exception e) {
+			e.printStackTrace();
+			installProgress.dismiss();
+			pHandler.sendMessage(pHandler.obtainMessage(CouchInstallActivity.ERROR));
+		}		
+	}	
 }

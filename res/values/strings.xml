@@ -5,4 +5,5 @@
 <string name="delete">Delete Databases</string>
 <string name="loading_dialog">CouchDB is Loading...</string>
 <string name="confirm_delete">Are you sure you want to delete, this will delete all of your existing data?</string>
+<string name="install_error">There was an error fetching the binaries, are you online? Please try again.</string>
 </resources>

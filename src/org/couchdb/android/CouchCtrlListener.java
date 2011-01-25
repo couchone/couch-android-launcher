@@ -18,8 +18,7 @@ public class CouchCtrlListener {
 	private Boolean cancelled = false;
 	private Boolean running = false;
 
-	public CouchCtrlListener(String couchUrl, String db, String user,
-			String pass) {
+	public CouchCtrlListener(String couchUrl, String db, String user, String pass) {
 		this.couchUrl = couchUrl;
 		this.adminUser = user;
 		this.adminPass = pass;
