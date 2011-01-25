@@ -12,7 +12,7 @@ interface ICouchService
     /* The database may not be named as hinted here, this is to
      * prevent conflicts
      */
-    void initDatabase(ICouchClient callback, String name);
+    void initDatabase(ICouchClient callback, String name, boolean cmdDb);
 
     /* This returns the admin credentials of CouchDB, you should
      * really avoid ever using this 
