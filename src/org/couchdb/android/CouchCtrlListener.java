@@ -28,7 +28,7 @@ public class CouchCtrlListener {
 
 	public void start() {
 
-		Log.v(CouchFutonActivity.TAG, "Starting Listener for " + ctrl);
+		Log.v(CouchProcess.TAG, "Starting Listener for " + ctrl);
 
 		if (!running) {
 			try {
@@ -82,7 +82,7 @@ public class CouchCtrlListener {
 					+ "/_changes?include_docs=true&feed=longpoll&since="
 					+ Integer.toString(seq);
 			JSONObject json = HTTPRequest.get(url, headers()).json;
-			Log.v(CouchFutonActivity.TAG, "Received Changes for " + ctrl);
+			Log.v(CouchProcess.TAG, "Received Changes for " + ctrl);
 
 			seq = json.getInt("last_seq");
 			JSONArray results = json.getJSONArray("results");
@@ -91,13 +91,13 @@ public class CouchCtrlListener {
 				handleChange(results.getJSONObject(i).getJSONObject("doc"));
 			}
 		}
-		Log.v(CouchFutonActivity.TAG, "Changes listener on " + ctrl + " has stopped");
+		Log.v(CouchProcess.TAG, "Changes listener on " + ctrl + " has stopped");
 		running = false;
 		cancelled = false;
 	}
 
 	public void cancel() {
-		Log.v(CouchFutonActivity.TAG, "Cancelling changes listener for " + ctrl);
+		Log.v(CouchProcess.TAG, "Cancelling changes listener for " + ctrl);
 		cancelled = true;
 	}
 

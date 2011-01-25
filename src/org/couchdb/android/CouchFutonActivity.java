@@ -16,7 +16,6 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.RemoteException;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -28,20 +27,57 @@ import android.webkit.WebViewClient;
 
 public class CouchFutonActivity extends Activity {
 
-	public final static String TAG = "CouchDB";
-	public final static String FUTON = "http://127.0.0.1:5984/_utils/";
+	private CouchProcess couch = CouchProcess.getInstance();
 
 	private ProgressDialog loading;
-
 	private ICouchService couchService;
-	public Boolean serviceStarted = false;
-
+	private WebView webView;
+	
 	private static final int COUCH_STARTED = 1;
 
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		attemptLaunch();
+	}
+
+	@Override
+	public void onRestart() {
+		super.onRestart();
+		attemptLaunch();
+	}
+
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+		if (webView != null) {
+			webView.destroy();
+		}
+		if (couchService != null) {
+			unbindService(mConnection);
+		}
+	}
+	
+	/*
+	 * Checks to see if Couch is fully installed, if not prompt to complete
+	 * installation otherwise start the couchdb service
+	 */
+	private void attemptLaunch() {
+		if (!CouchInstaller.checkInstalled()) {
+			startActivity(new Intent(this, CouchInstallActivity.class));
+		} else if (!CouchProcess.getInstance().couchStarted) {
+			String msg = this.getString(R.string.loading_dialog);
+			loading = ProgressDialog.show(this, "", msg, true);
+			bindService(new Intent(ICouchService.class.getName()), mConnection, Context.BIND_AUTO_CREATE);
+		}
+	}
+	
+	/* 
+	 * This holds the connection to the CouchDB Service
+	 */
 	private ServiceConnection mConnection = new ServiceConnection() {
 		public void onServiceConnected(ComponentName className, IBinder service) {
 			try {
-				serviceStarted = true;
 				couchService = ICouchService.Stub.asInterface(service);
 				couchService.initCouchDB(mCallback);
 			} catch (RemoteException e) {
@@ -53,86 +89,43 @@ public class CouchFutonActivity extends Activity {
 			couchService = null;
 		}
 	};
+	
+	/*
+	 * Implement the callbacks that allow CouchDB to talk to this app
+	 */
+	private ICouchClient mCallback = new ICouchClient.Stub() {
+		@Override
+		public void couchStarted(String host, int port) throws RemoteException {
+			mHandler.sendMessage(mHandler.obtainMessage(COUCH_STARTED));
+		}
 
-	private void setFutonView() {
-		
-		String user = CouchProcess.getInstance().adminUser;
-		String pass = CouchProcess.getInstance().adminPass;
-
-		WebView webView = new WebView(CouchFutonActivity.this);
-		webView.setWebChromeClient(new WebChromeClient());
-		webView.setWebViewClient(new CustomWebViewClient());
-		webView.setHttpAuthUsernamePassword("127.0.0.1", "administrator", user, pass);
-		webView.getSettings().setJavaScriptEnabled(true);
-		webView.getSettings().setBuiltInZoomControls(true);
-		webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
-		setContentView(webView);
-		webView.loadUrl(FUTON);
+		@Override
+		public void databaseCreated(String name, String user, String pass,
+				String tag) throws RemoteException {
+		}
 	};
 
-	private class CustomWebViewClient extends WebViewClient {
+	/*
+	 * Because the service communication happens in a seperate thread, we need
+	 * a message handler to control the ui in this thread
+	 */
+	private Handler mHandler = new Handler() {
 		@Override
-		public boolean shouldOverrideUrlLoading(WebView view, String url) {
-			view.loadUrl(url);
-			return true;
-		}
-
-		@Override
-		public void onReceivedHttpAuthRequest(WebView view,
-				HttpAuthHandler handler, String host, String realm) {
-			String[] up = view.getHttpAuthUsernamePassword(host, realm);
-			handler.proceed(up[0], up[1]);
-		}
-	}
-
-	private void showLoading() {
-		loading = ProgressDialog.show(this, "", "CouchDB is Loading...", true);
-	}
-
-	private Boolean deleteDirectory(File dir) {
-		if (dir.isDirectory()) {
-			String[] children = dir.list();
-			for (int i = 0; i < children.length; i++) {
-				boolean success = deleteDirectory(new File(dir, children[i]));
-				if (!success) {
-					return false;
-				}
+		public void handleMessage(Message msg) {
+			switch (msg.what) {
+			case COUCH_STARTED:
+				loading.dismiss();
+				launchFuton();
+				break;
+			default:
+				super.handleMessage(msg);
 			}
 		}
-		return dir.delete();
-	}
+	};
 
-	private void deleteDatabases() {
-		unbindService(mConnection);
-		CouchProcess.getInstance().stopCouchDB();
-		Log.v(TAG, "DELETING EVERYTHING");
-		File couchDir = new File(Environment.getExternalStorageDirectory(),
-				"couch");
-		// ARG THIS IS TOTALLY SCARY AND WRONG
-		deleteDirectory(couchDir);
-		finish();
-	}
-
-	private void confirmDelete() {
-		AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		builder.setMessage(
-				"Are you sure you want to delete, this will delete all of your existing data?")
-				.setCancelable(false)
-				.setPositiveButton("Yes",
-						new DialogInterface.OnClickListener() {
-							public void onClick(DialogInterface dialog, int id) {
-								CouchFutonActivity.this.deleteDatabases();
-							}
-						})
-				.setNegativeButton("No", new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface dialog, int id) {
-						dialog.cancel();
-					}
-				});
-		AlertDialog alert = builder.create();
-		alert.show();
-	}
-
+	/*
+	 * Creates the menu items
+	 */
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater inflater = getMenuInflater();
@@ -140,6 +133,9 @@ public class CouchFutonActivity extends Activity {
 		return true;
 	};
 
+	/*
+	 * Handles the menu item callbacks
+	 */
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
@@ -154,61 +150,82 @@ public class CouchFutonActivity extends Activity {
 		}
 	}
 
-	@Override
-	protected void onDestroy() {
-		super.onDestroy();
-		if (couchService != null) {
-			unbindService(mConnection);
-		}
+	/* 
+	 * Confirm that the user wants to delete their databases
+	 */
+	private void confirmDelete() {
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setMessage(this.getString(R.string.confirm_delete))
+			.setCancelable(false)
+			.setPositiveButton("Yes",
+					new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int id) {
+							CouchFutonActivity.this.deleteDatabases();
+						}
+					})
+			.setNegativeButton("No", new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog, int id) {
+					dialog.cancel();
+				}
+			});
+		AlertDialog alert = builder.create();
+		alert.show();
 	}
 
-	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		boot();
+	/*
+	 * Because we store the database files on the sdcard, uninstalling the application
+	 * will persist the databases on reinstall, this will delete the entire 
+	 * couch directory on the sdcard and quit the application, the next time the 
+	 * user starts up again they will be prompted to reinstall couch
+	 * 
+	 * However this is dangerous and messy and the functionality should probably
+	 * be removed entirely
+	 */
+	private void deleteDatabases() {
+		unbindService(mConnection);
+		CouchProcess.getInstance().stopCouchDB();
+		File couchDir = new File(Environment.getExternalStorageDirectory(), "couch");
+		deleteDirectory(couchDir);
+		finish();
 	}
-
-	@Override
-	public void onRestart() {
-		super.onRestart();
-		boot();
+	
+	private void launchFuton() {
+		webView = new WebView(CouchFutonActivity.this);
+		webView.setWebChromeClient(new WebChromeClient());
+		webView.setWebViewClient(new CustomWebViewClient());
+		webView.setHttpAuthUsernamePassword(couch.host, "administrator", couch.adminUser, couch.adminPass);
+		webView.getSettings().setJavaScriptEnabled(true);
+		webView.getSettings().setBuiltInZoomControls(true);
+		webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
+		setContentView(webView);
+		webView.loadUrl(couch.couchUrl() + "_utils/");
 	};
 
-	private void boot() {
-		boolean installed = CouchInstaller.checkInstalled();
-		if (!installed && !serviceStarted) {
-			startActivity(new Intent(this, CouchInstallActivity.class));
-		} else if (!serviceStarted) {
-			showLoading();
-			bindService(new Intent(ICouchService.class.getName()), mConnection,
-					Context.BIND_AUTO_CREATE);
-		}
-	};
-
-	private ICouchClient mCallback = new ICouchClient.Stub() {
-		@Override
-		public void couchStarted(String host, int port) throws RemoteException {
-			mHandler.sendMessage(mHandler.obtainMessage(COUCH_STARTED));
-		}
-
-		@Override
-		public void databaseCreated(String name, String user, String pass,
-				String tag) throws RemoteException {
-		}
-	};
-
-	private Handler mHandler = new Handler() {
-		@Override
-		public void handleMessage(Message msg) {
-			switch (msg.what) {
-			case COUCH_STARTED:
-				loading.dismiss();
-				setFutonView();
-				break;
-			default:
-				super.handleMessage(msg);
+	private Boolean deleteDirectory(File dir) {
+		if (dir.isDirectory()) {
+			String[] children = dir.list();
+			for (int i = 0; i < children.length; i++) {
+				boolean success = deleteDirectory(new File(dir, children[i]));
+				if (!success) {
+					return false;
+				}
 			}
 		}
-	};
+		return dir.delete();
+	}
+	
+	private class CustomWebViewClient extends WebViewClient {
+		@Override
+		public boolean shouldOverrideUrlLoading(WebView view, String url) {
+			view.loadUrl(url);
+			return true;
+		}
 
+		@Override
+		public void onReceivedHttpAuthRequest(WebView view,
+				HttpAuthHandler handler, String host, String realm) {
+			String[] up = view.getHttpAuthUsernamePassword(host, realm);
+			handler.proceed(up[0], up[1]);
+		}
+	}
 }

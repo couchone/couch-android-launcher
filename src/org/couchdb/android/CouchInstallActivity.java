@@ -53,7 +53,7 @@ public class CouchInstallActivity extends Activity {
 
 			case CouchInstallActivity.COMPLETE:
 				installProgress.dismiss();
-				Log.v(CouchFutonActivity.TAG, "Launching Couchdb activity");
+				Log.v(CouchProcess.TAG, "Launching Couchdb activity");
 				startActivity(new Intent(getApplicationContext(), CouchFutonActivity.class));
 				break;
 			}
@@ -101,7 +101,6 @@ public class CouchInstallActivity extends Activity {
 
 	class InstallError {
 		public String description;
-
 		public InstallError(String description) {
 			this.description = description;
 		}

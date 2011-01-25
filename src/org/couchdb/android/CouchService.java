@@ -21,7 +21,6 @@ import android.os.RemoteException;
 public class CouchService extends Service {
 
 	private NotificationManager mNM;
-	private Boolean couchStarted = false;
 
 	private CouchProcess couchProcess = CouchProcess.getInstance();
 	
@@ -44,7 +43,7 @@ public class CouchService extends Service {
 			String packageName = packageNameFromUid(Binder.getCallingUid());
 			couchClients.put(packageName, cb);
 
-			if (couchStarted) {
+			if (couchProcess.couchStarted) {
 				couchStarted();
 			}
 		}
@@ -172,7 +171,7 @@ public class CouchService extends Service {
 		
 		for (Entry<String, ICouchClient> entry : couchClients.entrySet()) {
 			ICouchClient client = entry.getValue();
-			client.couchStarted(couchProcess.couchHost, couchProcess.couchPort);
+			client.couchStarted(couchProcess.host, couchProcess.port);
 			couchClients.remove(entry.getKey());
 		}
 	}

@@ -23,6 +23,8 @@ import com.google.ase.Exec;
 
 public class CouchProcess {
 
+	public static String TAG = "CouchDB";
+	
 	private static volatile CouchProcess INSTANCE = null;
 	
     public static synchronized CouchProcess getInstance() {
@@ -39,8 +41,8 @@ public class CouchProcess {
 	public String adminPass;
 
 	// TODO: read from config file
-	final String couchHost = "127.0.0.1";
-	final int couchPort = 5984;
+	public final String host = "127.0.0.1";
+	public final int port = 5984;
 
     
 	public Integer pid;
@@ -49,7 +51,7 @@ public class CouchProcess {
 	
 	public CouchService service;
 	
-	public Boolean couchStarted;
+	public Boolean couchStarted = false;
 
 	boolean notify;
 
@@ -71,7 +73,7 @@ public class CouchProcess {
 
 		new Thread(new Runnable() {
 			public void run() {
-				Log.v(CouchFutonActivity.TAG, "PID: " + pid);
+				Log.v(TAG, "PID: " + pid);
 				while (fd.valid()) {
 					String line;
 					try {
@@ -79,7 +81,7 @@ public class CouchProcess {
 					} catch (IOException e) {
 						break;
 					}
-					Log.v(CouchFutonActivity.TAG, line);
+					Log.v(TAG, line);
 					if (line.contains("has started on")) {
 						couchStarted = true;
 						try {
@@ -92,7 +94,7 @@ public class CouchProcess {
 						} catch (RemoteException e) {
 							e.printStackTrace();
 						}
-						Log.v(CouchFutonActivity.TAG, "Couch has started.");
+						Log.v(TAG, "Couch has started.");
 					}
 				}
 			}
@@ -101,7 +103,6 @@ public class CouchProcess {
 	
 	private void ensureAdmin() throws JSONException {
 		adminPass = readOrGeneratePass(adminUser);
-		Log.v(CouchFutonActivity.TAG, "admin passsword is " + adminPass);
 		// TODO: only works because I cant overwrite, check if exists in future
 		String url = couchUrl() + "_config/admins/" + adminUser;
 		HTTPRequest.httpRequest("PUT", url, "\"" + adminPass + "\"",
@@ -169,8 +170,8 @@ public class CouchProcess {
 	}
 	
 
-	String couchUrl() {
-		return "http://" + couchHost + ":" + Integer.toString(couchPort) + "/";
+	public String couchUrl() {
+		return "http://" + host + ":" + Integer.toString(port) + "/";
 	}
 
 }
