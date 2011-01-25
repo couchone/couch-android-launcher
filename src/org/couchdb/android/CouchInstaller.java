@@ -31,6 +31,22 @@ public class CouchInstaller {
 
 	final static String TAG = "CouchDB";
 
+	public static void doInstall(Handler handler) throws IOException {
+		
+		for(String pkg : packageSet()) {
+			if(!(new File(dataPath + "/" + pkg + ".installedfiles")).exists()) {
+				installPackage(pkg, handler);
+			}	
+		}
+
+		Message done = Message.obtain();
+		done.what = CouchInstallActivity.COMPLETE;
+		handler.sendMessage(done);
+	}
+
+	/* 
+	 * This fetches a given package from amazon and tarbombs it to the filsystem
+	 */
 	private static void installPackage(String pkg, Handler handler)
 			throws IOException {
 		
@@ -42,6 +58,7 @@ public class CouchInstaller {
 		ArrayList<String> installedfiles = new ArrayList<String>();
 		StatusLine status = response.getStatusLine();
 		Log.d(TAG, "Request returned status " + status);
+		
 		if (status.getStatusCode() == 200) {
 			HttpEntity entity = response.getEntity();
 			InputStream instream = entity.getContent();
@@ -66,7 +83,11 @@ public class CouchInstaller {
 					IOUtils.copy(tarstream, new FileOutputStream(target));
 					installedfiles.add(e.getName());
 				}
-				Runtime.getRuntime().exec("chmod 755 " + e.getName()); //TODO: Set to actual tar perms.
+				
+				//TODO: Set to actual tar perms.
+				Runtime.getRuntime().exec("chmod 755 " + e.getName()); 
+				
+				// This tells the ui how much progress has been made
 				files++;
 				Message progress = new Message();
 				progress.arg1 = files++;
@@ -93,6 +114,10 @@ public class CouchInstaller {
 		}
 	}
 
+	/*
+	 * Verifies that CouchDB is installed by checking the package files we 
+	 * write on installation + the data directory on the sd card
+	 */
 	public static boolean checkInstalled() {
 				
 		for (String pkg : packageSet()) {
@@ -105,10 +130,13 @@ public class CouchInstaller {
 		return new File(Environment.getExternalStorageDirectory(), "couch").exists();
 	}
 
+
+	/*
+	 * List of packages that need to be installed
+	 */
 	public static List<String> packageSet() {
 		ArrayList<String> packages = new ArrayList<String>();
-
-		
+	
 		// TODO: Different CPU arch support.
 		// TODO: Some kind of sane remote manifest for this (remote updater)
 		packages.add("couch-erl-1.0"); // CouchDB, Erlang, CouchJS
@@ -125,18 +153,4 @@ public class CouchInstaller {
 		}
 		return packages;
 	}
-
-	public static void doInstall(Handler handler) throws IOException {
-		
-		for(String pkg : packageSet()) {
-			if(!(new File(dataPath + "/" + pkg + ".installedfiles")).exists()) {
-				installPackage(pkg, handler);
-			}	
-		}
-
-		Message done = Message.obtain();
-		done.what = CouchInstallActivity.COMPLETE;
-		handler.sendMessage(done);
-	}
-
 }
