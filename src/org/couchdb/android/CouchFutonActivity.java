@@ -16,6 +16,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.RemoteException;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -27,15 +28,12 @@ import android.webkit.WebViewClient;
 
 public class CouchFutonActivity extends Activity {
 
-	/* 
-	 * CouchProcess is a singleton that handles most of the core 
-	 * management
-	 */
-	private CouchProcess couch = CouchProcess.getInstance();
-
 	private ProgressDialog loading;
 	private ICouchService couchService;
 	private WebView webView;
+	
+	private String couchHost;
+	private int couchPort;
 	
 	private boolean couchStarted = false;
 	
@@ -102,6 +100,8 @@ public class CouchFutonActivity extends Activity {
 	private ICouchClient mCallback = new ICouchClient.Stub() {
 		@Override
 		public void couchStarted(String host, int port) throws RemoteException {
+			couchHost = host;
+			couchPort = port;
 			couchStarted = true;
 			mHandler.sendMessage(mHandler.obtainMessage(COUCH_STARTED));
 		}
@@ -149,16 +149,16 @@ public class CouchFutonActivity extends Activity {
 			unbindService(mConnection);
 			finish();
 			return true;
-		case R.id.delete:
-			confirmDelete();
+		//case R.id.delete:
+		//	confirmDelete();
 		default:
 			return super.onOptionsItemSelected(item);
 		}
 	}
 
+	// THESE FUNCTIONS ARE CURRENTLY DISABLED
 	/* 
 	 * Confirm that the user wants to delete their databases
-	 */
 	private void confirmDelete() {
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		builder.setMessage(this.getString(R.string.confirm_delete))
@@ -177,7 +177,8 @@ public class CouchFutonActivity extends Activity {
 		AlertDialog alert = builder.create();
 		alert.show();
 	}
-
+     */
+	
 	/*
 	 * Because we store the database files on the sdcard, uninstalling the application
 	 * will persist the databases on reinstall, this will delete the entire 
@@ -186,7 +187,6 @@ public class CouchFutonActivity extends Activity {
 	 * 
 	 * However this is dangerous and messy and the functionality should probably
 	 * be removed entirely
-	 */
 	private void deleteDatabases() {
 		unbindService(mConnection);
 		CouchProcess.getInstance().stop();
@@ -194,18 +194,20 @@ public class CouchFutonActivity extends Activity {
 		deleteDirectory(couchDir);
 		finish();
 	}
+	 */
 	
 	private void launchFuton() {
-		String pass = couch.readOrGeneratePass(couch.adminUser);
+		String pass = CouchProcess.getInstance().readOrGeneratePass("admin");
 		webView = new WebView(CouchFutonActivity.this);
 		webView.setWebChromeClient(new WebChromeClient());
 		webView.setWebViewClient(new CustomWebViewClient());
-		webView.setHttpAuthUsernamePassword(couch.host, "administrator", couch.adminUser, pass);
+		webView.setHttpAuthUsernamePassword(couchHost, "administrator", "admin", pass);
 		webView.getSettings().setJavaScriptEnabled(true);
 		webView.getSettings().setBuiltInZoomControls(true);
 		webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
 		setContentView(webView);
-		webView.loadUrl(couch.url() + "_utils/");
+		String url = "http://" + couchHost + ":" + Integer.toString(couchPort) + "/";
+		webView.loadUrl(url + "_utils/");
 	};
 
 	private Boolean deleteDirectory(File dir) {

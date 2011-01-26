@@ -60,8 +60,7 @@ public class HTTPRequest {
 
 		try {
 
-			HttpURLConnection c = (HttpURLConnection) new URL(url)
-					.openConnection();
+			HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
 			String charEncoding = "iso-8859-1";
 
 			c.setDoOutput(true);

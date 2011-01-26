@@ -17,6 +17,7 @@ import android.content.pm.PackageManager;
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.util.Log;
 
 public class CouchService extends Service {
 
@@ -61,6 +62,11 @@ public class CouchService extends Service {
 		return new CouchServiceImpl();
 	}
 	
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        return START_STICKY;
+    }	
+
 	/*
 	 * implements the callbacks that clients can call into the couchdb service
 	 */

@@ -34,15 +34,12 @@ public class CouchProcess {
 	public final int port = 5984;
 
 	public boolean started = false;
-
+	
 	// We provide CouchProcess as a Singleton so the FutonActivity can access it 
 	// directly
-	private static volatile CouchProcess INSTANCE = null;
+	private static volatile CouchProcess INSTANCE = new CouchProcess();
 
 	public static synchronized CouchProcess getInstance() {
-        if (INSTANCE == null) {
-        	INSTANCE = new CouchProcess();
-        }
         return INSTANCE;	
     }
 	    

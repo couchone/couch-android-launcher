@@ -3,7 +3,7 @@
  <item android:id="@+id/stop"
           android:icon="@drawable/quitcouch"
           android:title="@string/stop" />
-    <item android:id="@+id/delete"
+    <!-- <item android:id="@+id/delete"
           android:icon="@drawable/trash"
-          android:title="@string/delete" />
+          android:title="@string/delete" /> -->
 </menu>
