@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?> 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-      package="org.couchdb.android"
+      package="com.couchone.couchdb"
       android:installLocation="preferExternal"
       android:versionName="1.0-android-0.5" android:versionCode="6">
 
@@ -23,7 +23,7 @@
 	
 		<service android:name="CouchService" android:exported="true" android:enabled="true" android:process=":remote">
 			<intent-filter>
-				<action android:name="org.couchdb.android.ICouchService"></action>
+				<action android:name="com.couchone.couchdb.ICouchService"></action>
 			</intent-filter>
 		</service>
 	</application>
@@ -33,9 +33,5 @@
 	<uses-permission android:name="android.permission.INTERNET"></uses-permission>
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"></uses-permission>
 	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"></uses-permission>
-	
-	<permission-tree android:icon="@drawable/icon" 
-					 android:label="Grant access to applications" 
-                     android:name="org.couchdb.db" />
 	
 </manifest> 

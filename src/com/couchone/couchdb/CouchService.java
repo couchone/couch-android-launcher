@@ -6,9 +6,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.couchdb.android.ICouchClient;
-import org.couchdb.android.ICouchService;
-import org.couchdb.android.R;
 import org.json.JSONException;
 
 import android.app.Notification;

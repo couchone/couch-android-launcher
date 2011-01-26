@@ -1,9 +1,5 @@
 package com.couchone.couchdb;
 
-import org.couchdb.android.ICouchClient;
-import org.couchdb.android.ICouchService;
-import org.couchdb.android.R;
-
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.ComponentName;
