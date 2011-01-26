@@ -1,4 +1,4 @@
-package org.couchdb.android;
+package com.couchone.couchdb;
 
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
@@ -6,6 +6,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.couchdb.android.ICouchClient;
+import org.couchdb.android.ICouchService;
+import org.couchdb.android.R;
 import org.json.JSONException;
 
 import android.app.Notification;
@@ -17,7 +20,6 @@ import android.content.pm.PackageManager;
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.RemoteException;
-import android.util.Log;
 
 public class CouchService extends Service {
 

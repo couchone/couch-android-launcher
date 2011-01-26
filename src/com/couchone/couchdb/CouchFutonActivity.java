@@ -1,22 +1,20 @@
-package org.couchdb.android;
+package com.couchone.couchdb;
 
-import java.io.File;
+import org.couchdb.android.ICouchClient;
+import org.couchdb.android.ICouchService;
+import org.couchdb.android.R;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.RemoteException;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -194,6 +192,20 @@ public class CouchFutonActivity extends Activity {
 		deleteDirectory(couchDir);
 		finish();
 	}
+	
+	private Boolean deleteDirectory(File dir) {
+		if (dir.isDirectory()) {
+			String[] children = dir.list();
+			for (int i = 0; i < children.length; i++) {
+				boolean success = deleteDirectory(new File(dir, children[i]));
+				if (!success) {
+					return false;
+				}
+			}
+		}
+		return dir.delete();
+	}
+	
 	 */
 	
 	private void launchFuton() {
@@ -210,19 +222,6 @@ public class CouchFutonActivity extends Activity {
 		webView.loadUrl(url + "_utils/");
 	};
 
-	private Boolean deleteDirectory(File dir) {
-		if (dir.isDirectory()) {
-			String[] children = dir.list();
-			for (int i = 0; i < children.length; i++) {
-				boolean success = deleteDirectory(new File(dir, children[i]));
-				if (!success) {
-					return false;
-				}
-			}
-		}
-		return dir.delete();
-	}
-	
 	private class CustomWebViewClient extends WebViewClient {
 		@Override
 		public boolean shouldOverrideUrlLoading(WebView view, String url) {

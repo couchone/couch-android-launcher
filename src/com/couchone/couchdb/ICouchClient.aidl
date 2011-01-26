@@ -1,4 +1,4 @@
-package org.couchdb.android;
+package com.couchone.couchdb;
 
 interface ICouchClient
 {

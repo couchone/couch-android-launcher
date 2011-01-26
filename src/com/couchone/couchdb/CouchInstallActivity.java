@@ -1,4 +1,6 @@
-package org.couchdb.android;
+package com.couchone.couchdb;
+
+import org.couchdb.android.R;
 
 import android.app.Activity;
 import android.app.AlertDialog;

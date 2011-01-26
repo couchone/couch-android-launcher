@@ -1,6 +1,6 @@
-package org.couchdb.android;
+package com.couchone.couchdb;
 
-import org.couchdb.android.ICouchClient;
+import com.couchone.couchdb.ICouchClient;
 
 interface ICouchService
 {
