@@ -27,11 +27,17 @@ import android.webkit.WebViewClient;
 
 public class CouchFutonActivity extends Activity {
 
+	/* 
+	 * CouchProcess is a singleton that handles most of the core 
+	 * management
+	 */
 	private CouchProcess couch = CouchProcess.getInstance();
 
 	private ProgressDialog loading;
 	private ICouchService couchService;
 	private WebView webView;
+	
+	private boolean couchStarted = false;
 	
 	private static final int COUCH_STARTED = 1;
 
@@ -65,7 +71,7 @@ public class CouchFutonActivity extends Activity {
 	private void attemptLaunch() {
 		if (!CouchInstaller.checkInstalled()) {
 			startActivity(new Intent(this, CouchInstallActivity.class));
-		} else if (!CouchProcess.getInstance().couchStarted) {
+		} else if (!couchStarted) {
 			String msg = this.getString(R.string.loading_dialog);
 			loading = ProgressDialog.show(this, "", msg, true);
 			bindService(new Intent(ICouchService.class.getName()), mConnection, Context.BIND_AUTO_CREATE);
@@ -96,13 +102,13 @@ public class CouchFutonActivity extends Activity {
 	private ICouchClient mCallback = new ICouchClient.Stub() {
 		@Override
 		public void couchStarted(String host, int port) throws RemoteException {
+			couchStarted = true;
 			mHandler.sendMessage(mHandler.obtainMessage(COUCH_STARTED));
 		}
 
 		@Override
-		public void databaseCreated(String name, String user, String pass,
-				String tag) throws RemoteException {
-		}
+		public void databaseCreated(String name, String user, String pass, String tag) 
+			throws RemoteException {}
 	};
 
 	/*
@@ -183,22 +189,23 @@ public class CouchFutonActivity extends Activity {
 	 */
 	private void deleteDatabases() {
 		unbindService(mConnection);
-		CouchProcess.getInstance().stopCouchDB();
+		CouchProcess.getInstance().stop();
 		File couchDir = new File(Environment.getExternalStorageDirectory(), "couch");
 		deleteDirectory(couchDir);
 		finish();
 	}
 	
 	private void launchFuton() {
+		String pass = couch.readOrGeneratePass(couch.adminUser);
 		webView = new WebView(CouchFutonActivity.this);
 		webView.setWebChromeClient(new WebChromeClient());
 		webView.setWebViewClient(new CustomWebViewClient());
-		webView.setHttpAuthUsernamePassword(couch.host, "administrator", couch.adminUser, couch.adminPass);
+		webView.setHttpAuthUsernamePassword(couch.host, "administrator", couch.adminUser, pass);
 		webView.getSettings().setJavaScriptEnabled(true);
 		webView.getSettings().setBuiltInZoomControls(true);
 		webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
 		setContentView(webView);
-		webView.loadUrl(couch.couchUrl() + "_utils/");
+		webView.loadUrl(couch.url() + "_utils/");
 	};
 
 	private Boolean deleteDirectory(File dir) {
@@ -225,7 +232,9 @@ public class CouchFutonActivity extends Activity {
 		public void onReceivedHttpAuthRequest(WebView view,
 				HttpAuthHandler handler, String host, String realm) {
 			String[] up = view.getHttpAuthUsernamePassword(host, realm);
-			handler.proceed(up[0], up[1]);
+			if( up != null && up.length == 2 ) { 
+				handler.proceed(up[0], up[1]);
+			}
 		}
 	}
 }

@@ -109,7 +109,10 @@ public class HTTPRequest {
 			e.printStackTrace();
 		}
 
-		JSONObject json = new JSONObject(sb.toString());
+		JSONObject json= sb.toString().length() == 0 
+			? new JSONObject() 
+			: new JSONObject(sb.toString());
+			
 		return new HTTPRequest(headers, json, sb.toString(), statusCode);
 	};
 

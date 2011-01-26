@@ -20,9 +20,7 @@ import android.os.RemoteException;
 
 public class CouchService extends Service {
 
-	private NotificationManager mNM;
-
-	private CouchProcess couchProcess = CouchProcess.getInstance();
+	private CouchProcess couch = CouchProcess.getInstance();
 	
 	// A list of couchClients that awaiting notifications of couch starting
 	private Map<String, ICouchClient> couchClients = new HashMap<String, ICouchClient>();
@@ -32,9 +30,40 @@ public class CouchService extends Service {
 		private Map<String, CouchCtrlListener> databases = new HashMap<String, CouchCtrlListener>();
 	}
 
-	// Contains a mapping of package names to map of database names + listeners
+	// Contains a mapping of package names to database listeners
 	private Map<String, dbListeners> listeners = new HashMap<String, dbListeners>();
 
+	private NotificationManager mNM;
+
+	/*
+	 * This is called to start the service
+	 */
+	@Override
+	public void onCreate() {
+		notifyStarting();
+		couch.service = this;
+		couch.start("/system/bin/sh", "/sdcard/couch/bin/couchdb", "");
+	}
+
+	@Override
+	public void onDestroy() {
+		if (couch.started) { 
+			couch.stop();
+		}
+		mNM.cancelAll();
+	}
+
+	/*
+	 * This is called called on the initial binding
+	 */
+	@Override
+	public IBinder onBind(Intent intent) {
+		return new CouchServiceImpl();
+	}
+	
+	/*
+	 * implements the callbacks that clients can call into the couchdb service
+	 */
 	public class CouchServiceImpl extends ICouchService.Stub {
 
 		@Override
@@ -43,31 +72,35 @@ public class CouchService extends Service {
 			String packageName = packageNameFromUid(Binder.getCallingUid());
 			couchClients.put(packageName, cb);
 
-			if (couchProcess.couchStarted) {
+			// Notify the client straight away that couch has started
+			if (couch.started == true) {
 				couchStarted();
 			}
 		}
 
 		@Override
-		public void initDatabase(ICouchClient callback, String tag,
-				boolean cmdDb) throws RemoteException {
-
+		public void initDatabase(ICouchClient callback, String tag, boolean cmdDb) 
+				throws RemoteException {
+			
 			String packageName = packageNameFromUid(Binder.getCallingUid());
 			String userName = packageName.replace(".", "_");
 			String dbName = tag + "-" + userName;
-			String pass = couchProcess.readOrGeneratePass(userName);
+			String pass = couch.readOrGeneratePass(userName);
 
 			createIfNotExists(dbName, userName, pass);
 
+			// clients can request a command database that proxies replication 
+			// requests as they dont have admin permissions to post directly
 			if (cmdDb) {
 
 				createIfNotExists(dbName + "-ctrl", userName, pass);
 
-				dbListeners tmp = listeners.containsKey(packageName) ? listeners
-						.get(packageName) : new dbListeners();
+				dbListeners dbs = listeners.containsKey(packageName) 
+					? listeners.get(packageName) 
+					: new dbListeners();
 
-				final CouchCtrlListener listener = getOrCreateListener(tmp,
-						packageName, dbName);
+				final CouchCtrlListener listener = 
+					getOrCreateListener(dbs, packageName, dbName);
 
 				new Thread(new Runnable() {
 					public void run() {
@@ -76,48 +109,47 @@ public class CouchService extends Service {
 				}).start();
 			}
 
+			// Notify the client that their database is ready
 			callback.databaseCreated(dbName, userName, pass, tag);
 		}
 
+		/*
+		 * When a client quits we just cancel any control database listeners
+		 * dont actually stop couch, that is done when the last client unbinds
+		 */
 		@Override
 		public void quitCouchDB() throws RemoteException {
-			String packageName = packageNameFromUid(Binder.getCallingUid());
-			if (listeners.containsKey(packageName)) {
-				dbListeners tmp = listeners.get(packageName);
-				for (Map.Entry<String, CouchCtrlListener> temp : tmp.databases
-						.entrySet()) {
-					temp.getValue().cancel();
-				}
-			}
+			cancelListeners();
 		}
 	};
 
-	private CouchCtrlListener getOrCreateListener(dbListeners tmp,
-			String packageName, String dbName) {
+	/*
+	 * Applications that restart may have existing listener objects
+	 */
+	private CouchCtrlListener getOrCreateListener(dbListeners tmp, String packageName, String dbName) {
 		if (tmp.databases.containsKey(dbName)) {
 			return tmp.databases.get(dbName);
 		} else {
-			CouchCtrlListener temp = new CouchCtrlListener(couchProcess.couchUrl(), dbName,
-					couchProcess.adminUser, couchProcess.adminPass);
+			CouchCtrlListener temp = new CouchCtrlListener(couch.url(), dbName,
+					couch.adminUser, couch.adminPass);
 			tmp.databases.put(dbName, temp);
 			listeners.put(packageName, tmp);
 			return temp;
 		}
 	}
 
+	/*
+	 * Create a new CouchDB user
+	 */
 	private void createUser(String user, String pass) {
 		try {
-
-			String url = couchProcess.couchUrl() + "/_users";
-			String salt = couchProcess.generatePassword(10);
+			String salt = couch.generatePassword(10);
 			String hashed = AeSimpleSHA1.SHA1(pass + salt);
 			String json = "{\"_id\":\"org.couchdb.user:" + user + "\","
 					+ "\"type\":\"user\"," + "\"name\":\"" + user + "\","
 					+ "\"roles\":[]," + "\"password_sha\":\"" + hashed + "\", "
 					+ "\"salt\":\"" + salt + "\"}";
-
-			HTTPRequest.httpRequest("POST", url, json, adminHeaders());
-
+			HTTPRequest.post(couch.url() + "/_users", json, adminHeaders());
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		} catch (UnsupportedEncodingException e) {
@@ -127,52 +159,51 @@ public class CouchService extends Service {
 		}
 	};
 
+	/*
+	 * If the requests database does not exist, create it and 
+	 * set the given user as an admin for it
+	 */
 	private void createIfNotExists(String dbName, String user, String pass) {
 		try {
-
-			String url = couchProcess.couchUrl() + dbName;
-			HTTPRequest res = HTTPRequest.httpRequest("GET", url, null,
-					adminHeaders());
-
+			String url = couch.url() + dbName;
+			HTTPRequest res = HTTPRequest.get(couch.url() + dbName, adminHeaders());
 			if (res.status == 404) {
 				createUser(user, pass);
-				HTTPRequest.httpRequest("PUT", url, null, adminHeaders());
-				String sec = "{\"admins\":{\"names\":[\""
-						+ user
+				HTTPRequest.put(url, null, adminHeaders());
+				String sec = "{\"admins\":{\"names\":[\"" + user
 						+ "\"],\"roles\":[]},\"readers\":{\"names\":[],\"roles\":[]}}";
-				HTTPRequest.httpRequest("PUT", url + "/_security", sec,
-						adminHeaders());
+				HTTPRequest.put(url + "/_security", sec, adminHeaders());
 			}
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
 	};
 
+	/*
+	 * once couch has started we need to notify all waiting clients
+	 */
 	void couchStarted() throws RemoteException {
 		
-		int icon = R.drawable.icon;
-		CharSequence tickerText = "CouchDB Running";
-		long when = System.currentTimeMillis();
-		if (true) { //(notify) {
-			Notification notification = new Notification(icon, tickerText, when);
-			notification.flags = Notification.FLAG_ONGOING_EVENT;
-			Intent i = new Intent(CouchService.this,
-					CouchFutonActivity.class);
-			notification.setLatestEventInfo(
-					getApplicationContext(),
-					"CouchDB Running",
-					"Press to open Futon", PendingIntent
-							.getActivity(CouchService.this,
-									0, i, 0));
-			mNM.cancel(1);
-			mNM.notify(2, notification);
-			startForeground(2, notification);
-		}
+		notifyStarted();
 		
 		for (Entry<String, ICouchClient> entry : couchClients.entrySet()) {
 			ICouchClient client = entry.getValue();
-			client.couchStarted(couchProcess.host, couchProcess.port);
+			client.couchStarted(couch.host, couch.port);
 			couchClients.remove(entry.getKey());
+		}
+	}
+
+	/*
+	 * Control databases have a long polling listener, stop them when an application
+	 * quits
+	 */
+	private void cancelListeners() { 
+		String packageName = packageNameFromUid(Binder.getCallingUid());
+		if (listeners.containsKey(packageName)) {
+			dbListeners tmp = listeners.get(packageName);
+			for (Map.Entry<String, CouchCtrlListener> temp : tmp.databases.entrySet()) {
+				temp.getValue().cancel();
+			}
 		}
 	}
 
@@ -180,41 +211,42 @@ public class CouchService extends Service {
 		PackageManager pm = getPackageManager();
 		String[] packages = pm.getPackagesForUid(Binder.getCallingUid());
 		return packages[0];
-	};
+	}
 
-	@Override
-	public void onCreate() {
+	private void notifyStarting() {
 		mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 		int icon = R.drawable.icon;
 		CharSequence tickerText = "CouchDB Starting";
 		long when = System.currentTimeMillis();
-		if (true) {
-			Notification notification = new Notification(icon, tickerText, when);
-			Intent notificationIntent = new Intent(this, CouchFutonActivity.class);
-			PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
-					notificationIntent, 0);
-			notification.setLatestEventInfo(getApplicationContext(),
-					"CouchDB Starting", "Please Wait...", contentIntent);
-			mNM.notify(1, notification);
-		}
-		couchProcess.registerService(this);
-		couchProcess.start("/system/bin/sh", "/sdcard/couch/bin/couchdb", "", true);
+		Notification notification = new Notification(icon, tickerText, when);
+		Intent notificationIntent = new Intent(this, CouchFutonActivity.class);
+		PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+		notification.setLatestEventInfo(getApplicationContext(),
+				"CouchDB Starting", "Please Wait...", contentIntent);
+		mNM.notify(1, notification);		
 	}
+	
+	private void notifyStarted() { 
+		int icon = R.drawable.icon;
+		CharSequence tickerText = "CouchDB Running";
+		long when = System.currentTimeMillis();
 
-	@Override
-	public void onDestroy() {
-		couchProcess.stopCouchDB();
-		mNM.cancelAll();
+		Notification notification = new Notification(icon, tickerText, when);
+		notification.flags = Notification.FLAG_ONGOING_EVENT;
+		Intent i = new Intent(CouchService.this,
+				CouchFutonActivity.class);
+		notification.setLatestEventInfo(
+				getApplicationContext(),
+				"CouchDB Running",
+				"Press to open Futon", 
+				PendingIntent.getActivity(CouchService.this, 0, i, 0));
+		mNM.cancel(1);
+		mNM.notify(2, notification);
+		startForeground(2, notification);
 	}
-
-	@Override
-	public IBinder onBind(Intent intent) {
-		IBinder client = new CouchServiceImpl();
-		return client;
-	}
-
+	
 	private String[][] adminHeaders() {
-		String auth = Base64Coder.encodeString(couchProcess.adminUser + ":" + couchProcess.adminPass);
+		String auth = Base64Coder.encodeString(couch.adminUser + ":" + couch.adminPass);
 		String[][] headers = { { "Authorization", "Basic " + auth } };
 		return headers;
 	}
