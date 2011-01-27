@@ -153,7 +153,7 @@ public class CouchService extends Service {
 					+ "\"type\":\"user\"," + "\"name\":\"" + user + "\","
 					+ "\"roles\":[]," + "\"password_sha\":\"" + hashed + "\", "
 					+ "\"salt\":\"" + salt + "\"}";
-			HTTPRequest.post(couch.url() + "/_users", json, adminHeaders());
+			HTTPRequest.post(couch.url() + "_users", json, adminHeaders());
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		} catch (UnsupportedEncodingException e) {
