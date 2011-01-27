@@ -143,66 +143,10 @@ public class CouchFutonActivity extends Activity {
 			unbindService(mConnection);
 			finish();
 			return true;
-		//case R.id.delete:
-		//	confirmDelete();
 		default:
 			return super.onOptionsItemSelected(item);
 		}
 	}
-
-	// THESE FUNCTIONS ARE CURRENTLY DISABLED
-	/* 
-	 * Confirm that the user wants to delete their databases
-	private void confirmDelete() {
-		AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		builder.setMessage(this.getString(R.string.confirm_delete))
-			.setCancelable(false)
-			.setPositiveButton("Yes",
-					new DialogInterface.OnClickListener() {
-						public void onClick(DialogInterface dialog, int id) {
-							CouchFutonActivity.this.deleteDatabases();
-						}
-					})
-			.setNegativeButton("No", new DialogInterface.OnClickListener() {
-				public void onClick(DialogInterface dialog, int id) {
-					dialog.cancel();
-				}
-			});
-		AlertDialog alert = builder.create();
-		alert.show();
-	}
-     */
-	
-	/*
-	 * Because we store the database files on the sdcard, uninstalling the application
-	 * will persist the databases on reinstall, this will delete the entire 
-	 * couch directory on the sdcard and quit the application, the next time the 
-	 * user starts up again they will be prompted to reinstall couch
-	 * 
-	 * However this is dangerous and messy and the functionality should probably
-	 * be removed entirely
-	private void deleteDatabases() {
-		unbindService(mConnection);
-		CouchProcess.getInstance().stop();
-		File couchDir = new File(Environment.getExternalStorageDirectory(), "couch");
-		deleteDirectory(couchDir);
-		finish();
-	}
-	
-	private Boolean deleteDirectory(File dir) {
-		if (dir.isDirectory()) {
-			String[] children = dir.list();
-			for (int i = 0; i < children.length; i++) {
-				boolean success = deleteDirectory(new File(dir, children[i]));
-				if (!success) {
-					return false;
-				}
-			}
-		}
-		return dir.delete();
-	}
-	
-	 */
 	
 	private void launchFuton() {
 		String pass = CouchProcess.getInstance().readOrGeneratePass("admin");

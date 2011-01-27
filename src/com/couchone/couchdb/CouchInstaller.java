@@ -33,6 +33,16 @@ public class CouchInstaller {
 
 	public static void doInstall(Handler handler) throws IOException {
 		
+		// WARNING: This deleted any previously installed couchdb data 
+		// and binaries stored on the sdcard to keep in line with usual 
+		// android app behaviour. However there doesnt look to be a way to protect
+		// ourselves from wiping the entire sdcard with a typo, so just be 
+		// careful
+		File couchDir = new File(Environment.getExternalStorageDirectory(), "couch");
+		if (couchDir.exists()) {
+			deleteDirectory(couchDir);
+		}
+		
 		for(String pkg : packageSet()) {
 			if(!(new File(dataPath + "/" + pkg + ".installedfiles")).exists()) {
 				installPackage(pkg, handler);
@@ -152,5 +162,21 @@ public class CouchInstaller {
 			return null;
 		}
 		return packages;
+	}
+	
+	/*
+	 * Recursively delete directory
+	 */
+	private static Boolean deleteDirectory(File dir) {
+		if (dir.isDirectory()) {
+			String[] children = dir.list();
+			for (int i = 0; i < children.length; i++) {
+				boolean success = deleteDirectory(new File(dir, children[i]));
+				if (!success) {
+					return false;
+				}
+			}
+		}
+		return dir.delete();
 	}
 }
