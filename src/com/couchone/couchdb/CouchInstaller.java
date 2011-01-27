@@ -26,8 +26,8 @@ import android.util.Log;
 
 public class CouchInstaller {
 	
-	final static String baseUrl = "http://couchdb-android.s3.amazonaws.com/";
-	final static String dataPath = "/data/data/org.couchdb.android";
+	final static String baseUrl = "http://couchone-android.s3.amazonaws.com/";
+	final static String dataPath = "/data/data/com.couchone.couchdb";
 
 	final static String TAG = "CouchDB";
 
