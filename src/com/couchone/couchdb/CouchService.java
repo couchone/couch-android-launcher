@@ -84,13 +84,12 @@ public class CouchService extends Service {
 		}
 
 		@Override
-		public void initDatabase(ICouchClient callback, String tag, boolean cmdDb) 
+		public void initDatabase(ICouchClient callback, String tag, String pass, boolean cmdDb) 
 				throws RemoteException {
 			
 			String packageName = packageNameFromUid(Binder.getCallingUid());
 			String userName = packageName.replace(".", "_");
 			String dbName = tag + "-" + userName;
-			String pass = couch.readOrGeneratePass(userName);
 
 			createIfNotExists(dbName, userName, pass);
 

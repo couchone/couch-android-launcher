@@ -15,7 +15,6 @@ import java.util.Random;
 
 import org.json.JSONException;
 
-import android.os.Environment;
 import android.util.Log;
 
 import com.google.ase.Exec;
@@ -81,20 +80,22 @@ public class CouchProcess {
 		adminPass = readOrGeneratePass(adminUser);
 		// TODO: only works because I cant overwrite, check if exists in future
 		String url = url() + "_config/admins/" + adminUser;
-		HTTPRequest.put(url, "\"" + adminPass + "\"");
+		try {
+			HTTPRequest.put(url, "\"" + adminPass + "\"");
+		} catch (JSONException e) {
+			// Config PUTS will return a string which causes HTTPRequest to throw
+		}
 	};
 	
 	public String readOrGeneratePass(String username) {
-		File couchSDCard = Environment.getExternalStorageDirectory();
-		String passwordFile = couchSDCard.getPath() + "/couch/" + username
-				+ ".passwd";
-		File f = new File(passwordFile);
+		String passFile = CouchInstaller.dataPath + "/" + username + ".passwd";
+		File f = new File(passFile);
 		if (!f.exists()) {
 			String pass = generatePassword(8);
-			writeFile(passwordFile, username + ":" + pass);
+			writeFile(passFile, username + ":" + pass);
 			return pass;
 		} else {
-			return readFile(passwordFile).split(":")[1];
+			return readFile(passFile).split(":")[1];
 		}
 	}
 
