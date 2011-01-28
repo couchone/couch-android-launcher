@@ -4,5 +4,7 @@
 	<classpathentry kind="lib" path="lib/commons-compress-1.0.jar"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="gen"/>
+	<classpathentry kind="src" path="/LibCouch"/>
+	<classpathentry kind="src" path="LibCouch_src"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

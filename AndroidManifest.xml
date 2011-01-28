@@ -23,7 +23,7 @@
 	
 		<service android:name="CouchService" android:exported="true" android:enabled="true" android:process=":remote">
 			<intent-filter>
-				<action android:name="com.couchone.couchdb.ICouchService"></action>
+				<action android:name="com.couchone.libcouch.ICouchService"></action>
 			</intent-filter>
 		</service>
 	</application>

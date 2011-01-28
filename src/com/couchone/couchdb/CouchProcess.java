@@ -17,6 +17,7 @@ import org.json.JSONException;
 
 import android.util.Log;
 
+import com.couchone.libcouch.HTTPRequest;
 import com.google.ase.Exec;
 
 public class CouchProcess {

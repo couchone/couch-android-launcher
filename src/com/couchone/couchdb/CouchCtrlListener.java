@@ -4,6 +4,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.couchone.libcouch.Base64Coder;
+import com.couchone.libcouch.HTTPRequest;
+
 import android.util.Log;
 
 public class CouchCtrlListener {

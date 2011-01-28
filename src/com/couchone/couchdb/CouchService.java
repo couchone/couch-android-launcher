@@ -8,6 +8,13 @@ import java.util.Map.Entry;
 
 import org.json.JSONException;
 
+import com.couchone.libcouch.AeSimpleSHA1;
+import com.couchone.libcouch.Base64Coder;
+import com.couchone.libcouch.HTTPRequest;
+import com.couchone.libcouch.ICouchClient;
+import com.couchone.libcouch.ICouchService;
+
+
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -17,6 +24,7 @@ import android.content.pm.PackageManager;
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.util.Log;
 
 public class CouchService extends Service {
 
@@ -170,6 +178,7 @@ public class CouchService extends Service {
 	private void createIfNotExists(String dbName, String user, String pass) {
 		try {
 			String url = couch.url() + dbName;
+			Log.v("TESTING", url);
 			HTTPRequest res = HTTPRequest.get(couch.url() + dbName, adminHeaders());
 			if (res.status == 404) {
 				createUser(user, pass);

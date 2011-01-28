@@ -1,5 +1,8 @@
 package com.couchone.couchdb;
 
+import com.couchone.libcouch.ICouchClient;
+import com.couchone.libcouch.ICouchService;
+
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.ComponentName;
@@ -11,6 +14,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.RemoteException;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -61,6 +65,7 @@ public class CouchFutonActivity extends Activity {
 	 * installation otherwise start the couchdb service
 	 */
 	private void attemptLaunch() {
+		Log.v(CouchProcess.TAG, "WORKING ***************");
 		if (!CouchInstaller.checkInstalled()) {
 			startActivity(new Intent(this, CouchInstallActivity.class));
 		} else if (!couchStarted) {
