@@ -65,7 +65,6 @@ public class CouchFutonActivity extends Activity {
 	 * installation otherwise start the couchdb service
 	 */
 	private void attemptLaunch() {
-		Log.v(CouchProcess.TAG, "WORKING ***************");
 		if (!CouchInstaller.checkInstalled()) {
 			startActivity(new Intent(this, CouchInstallActivity.class));
 		} else if (!couchStarted) {

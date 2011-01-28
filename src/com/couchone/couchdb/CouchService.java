@@ -175,7 +175,6 @@ public class CouchService extends Service {
 	private void createIfNotExists(String dbName, String user, String pass) {
 		try {
 			String url = couch.url() + dbName;
-			Log.v("TESTING", url);
 			HTTPRequest res = HTTPRequest.get(couch.url() + dbName, adminHeaders());
 			if (res.status == 404) {
 				createUser(user, pass);
