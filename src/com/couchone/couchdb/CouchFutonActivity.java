@@ -58,7 +58,12 @@ public class CouchFutonActivity extends Activity {
 			webView.destroy();
 		}
 		if (couchService != null) {
-			unbindService(mConnection);
+			try { 
+				unbindService(mConnection);
+			} catch (IllegalArgumentException e) {
+				// race condition between activity being destroyed and
+				// service telling us it lost connection
+			}
 		}
 	}
 	
