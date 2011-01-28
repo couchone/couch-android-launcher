@@ -4,9 +4,11 @@ import com.couchone.libcouch.ICouchClient;
 import com.couchone.libcouch.ICouchService;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
@@ -14,6 +16,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.RemoteException;
+import android.text.Html;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -147,9 +150,30 @@ public class CouchFutonActivity extends Activity {
 			unbindService(mConnection);
 			finish();
 			return true;
+		case R.id.adminpass:
+			showPassword();
+			return true;
 		default:
 			return super.onOptionsItemSelected(item);
 		}
+	}
+	
+	/*
+	 * 
+	 */
+	private void showPassword() { 
+		String pass = CouchProcess.getInstance().readOrGeneratePass("admin");
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setMessage(Html.fromHtml("Password for user <b>admin</b> is <b>" + pass + "</b>"))
+		       .setCancelable(false)
+		       .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+		           public void onClick(DialogInterface dialog, int id) {
+		                dialog.cancel();
+		           }
+		       });
+		AlertDialog alert = builder.create();
+		
+		alert.show();
 	}
 	
 	private void launchFuton() {

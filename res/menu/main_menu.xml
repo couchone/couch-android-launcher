@@ -3,4 +3,7 @@
  <item android:id="@+id/stop"
           android:icon="@drawable/quitcouch"
           android:title="@string/stop" />
+ <item android:id="@+id/adminpass"
+          android:icon="@drawable/password"
+          android:title="@string/password" />
 </menu>
