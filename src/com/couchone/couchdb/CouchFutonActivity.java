@@ -17,7 +17,6 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.RemoteException;
 import android.text.Html;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -162,7 +161,7 @@ public class CouchFutonActivity extends Activity {
 	 * 
 	 */
 	private void showPassword() { 
-		String pass = CouchProcess.getInstance().readOrGeneratePass("admin");
+		String pass = CouchProcess.readOrGeneratePass("admin");
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		builder.setMessage(Html.fromHtml("Password for user <b>admin</b> is <b>" + pass + "</b>"))
 		       .setCancelable(false)
@@ -177,7 +176,7 @@ public class CouchFutonActivity extends Activity {
 	}
 	
 	private void launchFuton() {
-		String pass = CouchProcess.getInstance().readOrGeneratePass("admin");
+		String pass = CouchProcess.readOrGeneratePass("admin");
 		webView = new WebView(CouchFutonActivity.this);
 		webView.setWebChromeClient(new WebChromeClient());
 		webView.setWebViewClient(new CustomWebViewClient());

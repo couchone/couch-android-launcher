@@ -24,11 +24,10 @@ import android.content.pm.PackageManager;
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.RemoteException;
-import android.util.Log;
 
 public class CouchService extends Service {
 
-	private CouchProcess couch = CouchProcess.getInstance();
+	private CouchProcess couch = new CouchProcess();
 	
 	// A list of couchClients that awaiting notifications of couch starting
 	private Map<String, ICouchClient> couchClients = new HashMap<String, ICouchClient>();
@@ -140,7 +139,7 @@ public class CouchService extends Service {
 			return tmp.databases.get(dbName);
 		} else {
 			CouchCtrlListener temp = new CouchCtrlListener(couch.url(), dbName,
-					couch.adminUser, couch.adminPass);
+					CouchProcess.adminUser, CouchProcess.adminPass);
 			tmp.databases.put(dbName, temp);
 			listeners.put(packageName, tmp);
 			return temp;
@@ -152,7 +151,7 @@ public class CouchService extends Service {
 	 */
 	private void createUser(String user, String pass) {
 		try {
-			String salt = couch.generatePassword(10);
+			String salt = CouchProcess.generatePassword(10);
 			String hashed = AeSimpleSHA1.SHA1(pass + salt);
 			String json = "{\"_id\":\"org.couchdb.user:" + user + "\","
 					+ "\"type\":\"user\"," + "\"name\":\"" + user + "\","
@@ -255,7 +254,7 @@ public class CouchService extends Service {
 	}
 	
 	private String[][] adminHeaders() {
-		String auth = Base64Coder.encodeString(couch.adminUser + ":" + couch.adminPass);
+		String auth = Base64Coder.encodeString(CouchProcess.adminUser + ":" + CouchProcess.adminPass);
 		String[][] headers = { { "Authorization", "Basic " + auth } };
 		return headers;
 	}

@@ -26,23 +26,15 @@ public class CouchProcess {
 
 	public CouchService service;
 
-	public String adminUser = "admin";
-	public String adminPass;
+	public static String adminUser = "admin";
+	public static String adminPass;
 
 	// TODO: read from config file
 	public final String host = "127.0.0.1";
 	public final int port = 5984;
 
 	public boolean started = false;
-	
-	// We provide CouchProcess as a Singleton so the FutonActivity can access it 
-	// directly
-	private static volatile CouchProcess INSTANCE = new CouchProcess();
-
-	public static synchronized CouchProcess getInstance() {
-        return INSTANCE;	
-    }
-	    
+		    
 	private Integer pid;
 	private PrintStream out;
 	private BufferedReader in;
@@ -88,7 +80,7 @@ public class CouchProcess {
 		}
 	};
 	
-	public String readOrGeneratePass(String username) {
+	public static String readOrGeneratePass(String username) {
 		String passFile = CouchInstaller.dataPath + "/" + username + ".passwd";
 		File f = new File(passFile);
 		if (!f.exists()) {
@@ -100,7 +92,7 @@ public class CouchProcess {
 		}
 	}
 
-	public String generatePassword(int length) {
+	public static String generatePassword(int length) {
 		String charset = "!0123456789abcdefghijklmnopqrstuvwxyz";
 		Random rand = new Random(System.currentTimeMillis());
 		StringBuffer sb = new StringBuffer();
@@ -111,7 +103,7 @@ public class CouchProcess {
 		return sb.toString();
 	}
 
-	private String readFile(String filePath) {
+	private static String readFile(String filePath) {
 		String contents = "";
 		try {
 			File file = new File(filePath);
@@ -125,7 +117,7 @@ public class CouchProcess {
 		return contents;
 	};
 
-	private void writeFile(String filePath, String data) {
+	private static void writeFile(String filePath, String data) {
 		try {
 			FileWriter writer = new FileWriter(filePath);
 			writer.write(data);
