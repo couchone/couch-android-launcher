@@ -58,6 +58,7 @@ public class CouchService extends Service {
 		if (couch.started) { 
 			couch.stop();
 		}
+		couchClients.clear();
 		mNM.cancelAll();
 	}
 
@@ -68,11 +69,7 @@ public class CouchService extends Service {
 	public IBinder onBind(Intent intent) {
 		return new CouchServiceImpl();
 	}
-	
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        return START_STICKY;
-    }	
+
 
 	/*
 	 * implements the callbacks that clients can call into the couchdb service

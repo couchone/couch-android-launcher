@@ -143,6 +143,7 @@ public class CouchProcess {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		started = false;
 	}
 	
 
