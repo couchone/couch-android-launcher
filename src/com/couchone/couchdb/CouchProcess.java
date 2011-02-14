@@ -17,7 +17,7 @@ import org.json.JSONException;
 
 import android.util.Log;
 
-import com.couchone.libcouch.HTTPRequest;
+import com.couchone.libcouch.AndCouch;
 import com.google.ase.Exec;
 
 public class CouchProcess {
@@ -74,7 +74,7 @@ public class CouchProcess {
 		// TODO: only works because I cant overwrite, check if exists in future
 		String url = url() + "_config/admins/" + adminUser;
 		try {
-			HTTPRequest.put(url, "\"" + adminPass + "\"");
+			AndCouch.put(url, "\"" + adminPass + "\"");
 		} catch (JSONException e) {
 			// Config PUTS will return a string which causes HTTPRequest to throw
 		}

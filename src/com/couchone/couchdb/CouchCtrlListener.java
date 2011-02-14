@@ -5,7 +5,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.couchone.libcouch.Base64Coder;
-import com.couchone.libcouch.HTTPRequest;
+import com.couchone.libcouch.AndCouch;
 
 import android.util.Log;
 
@@ -35,7 +35,7 @@ public class CouchCtrlListener {
 		if (!running) {
 			try {
 				running = true;
-				JSONObject dbInfo = HTTPRequest.get(couchUrl + ctrl, headers()).json;
+				JSONObject dbInfo = AndCouch.get(couchUrl + ctrl, headers()).json;
 				int updateSeq = dbInfo.getInt("update_seq");
 				changes(updateSeq);
 			} catch (JSONException e) {
@@ -48,7 +48,7 @@ public class CouchCtrlListener {
 
 	private void doReplication(JSONObject json) throws JSONException {
 		
-		HTTPRequest req = HTTPRequest.post(couchUrl + "_replicate", json.toString(), headers());
+		AndCouch req = AndCouch.post(couchUrl + "_replicate", json.toString(), headers());
 
 		// Java will just close the connection when it gets a 404
 		// without reading the result
@@ -63,7 +63,7 @@ public class CouchCtrlListener {
 		json.put("result", result);
 		json.put("status", "complete");
 		String id = json.getString("_id");
-		HTTPRequest.put(couchUrl + ctrl + "/" + id, json.toString(), headers());
+		AndCouch.put(couchUrl + ctrl + "/" + id, json.toString(), headers());
 	}
 
 	private void handleChange(JSONObject doc) throws JSONException {
@@ -82,7 +82,7 @@ public class CouchCtrlListener {
 			String url = couchUrl + ctrl
 					+ "/_changes?include_docs=true&feed=longpoll&since="
 					+ Integer.toString(seq);
-			JSONObject json = HTTPRequest.get(url, headers()).json;
+			JSONObject json = AndCouch.get(url, headers()).json;
 			Log.v(CouchProcess.TAG, "Received Changes for " + ctrl);
 
 			seq = json.getInt("last_seq");
